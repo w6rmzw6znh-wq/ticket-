@@ -54,10 +54,24 @@ body{margin:0;background:#000;color:#fff;font-family:Arial;text-align:center;pad
 </head>
 <body>
 <div class="logo">🎟️ AKIHARA</div>
-<p>Site en ligne</p>
-<a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds">
-<button style="padding:15px 30px;background:#5865F2;color:white;border:none;border-radius:10px;font-size:16px">Se connecter avec Discord</button>
-</a>
+<div id="content"><p>Chargement...</p></div>
+<script>
+async function init() {
+  try {
+    const res = await fetch("/api/me");
+    if (res.ok) {
+      const user = await res.json();
+      if (user.discord_id) {
+        document.getElementById("content").innerHTML = '<h1 style="color:#FFD700">Bienvenue ' + user.username + '</h1><p>Solde : ' + user.balance + ' 🪙</p><button onclick="logout()" style="padding:12px 25px;background:#FFD700;border:none;border-radius:10px;font-weight:bold">Déconnexion</button>';
+        return;
+      }
+    }
+  } catch(e) {}
+  document.getElementById("content").innerHTML = '<p>Connectez-vous avec Discord</p><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button style="padding:15px 30px;background:#5865F2;color:white;border:none;border-radius:10px;font-size:16px">Se connecter avec Discord</button></a>';
+}
+function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
+init();
+</script>
 </body>
 </html>`, { headers: { "Content-Type": "text/html" } });
   }
