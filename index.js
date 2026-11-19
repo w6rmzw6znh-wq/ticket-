@@ -164,22 +164,22 @@ const HTML = `<!DOCTYPE html>
 <title>AKIHARA</title>
 <style>
 body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial;min-height:100vh;display:flex;flex-direction:column}
-.header{text-align:center;padding:15px 10px;background:#0f0b1e;border-bottom:1px solid #2a2040}
-.logo{color:#a78bfa;font-size:24px;font-weight:bold}
-.user-bar{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin-top:10px;font-size:14px}
-.balance{background:#1a1430;border:1px solid #3b2f5e;padding:4px 12px;border-radius:16px;white-space:nowrap}
-.nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:12px}
-.nav button{padding:10px 16px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:10px;font-weight:600;font-size:13px}
-.container{width:100%;padding:12px;box-sizing:border-box;flex:1}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
-.card{background:#16122a;border:1px solid #2a2040;border-radius:14px;padding:12px;text-align:center}
-.card img{width:100%;border-radius:10px;margin-bottom:8px}
-.price{font-size:16px;color:#c4b5fd;margin:6px 0;font-weight:bold}
-.btn{padding:10px 18px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-size:14px}
-.scratch-area{width:260px;height:160px;margin:15px auto;background:#1a1430;border-radius:14px;position:relative;overflow:hidden;touch-action:none}
+.header{text-align:center;padding:10px 8px;background:#0f0b1e;border-bottom:1px solid #2a2040}
+.logo{color:#a78bfa;font-size:20px;font-weight:bold}
+.user-bar{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;margin-top:6px;font-size:13px}
+.balance{background:#1a1430;border:1px solid #3b2f5e;padding:3px 10px;border-radius:14px;white-space:nowrap}
+.nav{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px}
+.nav button{padding:8px 14px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-weight:600;font-size:12px}
+.container{width:100%;padding:8px;box-sizing:border-box;flex:1;overflow-y:auto}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+.card{background:#16122a;border:1px solid #2a2040;border-radius:12px;padding:10px;text-align:center}
+.card img{width:100%;border-radius:8px;margin-bottom:6px}
+.price{font-size:14px;color:#c4b5fd;margin:4px 0;font-weight:bold}
+.btn{padding:8px 14px;background:#7c3aed;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;font-size:13px}
+.scratch-area{width:240px;height:140px;margin:10px auto;background:#1a1430;border-radius:12px;position:relative;overflow:hidden;touch-action:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}
-.scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#c4b5fd;z-index:1}
-.footer{text-align:center;padding:12px;font-size:12px;color:#6b7280;border-top:1px solid #1a1430}
+.scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;color:#c4b5fd;z-index:1}
+.footer{text-align:center;padding:6px;font-size:11px;color:#6b7280;border-top:1px solid #1a1430;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -208,16 +208,16 @@ async function init() {
   else showLogin();
 }
 function showLogin() {
-  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:40px 15px"><h1 style="color:#a78bfa;font-size:32px;margin-bottom:8px">Bienvenue sur AKIHARA</h1><p style="color:#9ca3af;font-size:16px;margin-bottom:24px">Tickets à gratter • Roulette • Classement</p><div style="max-width:400px;margin:0 auto 30px;text-align:left;color:#c4b5fd;font-size:14px"><p>• Gratte des tickets premium</p><p>• Gagne des jetons</p><p>• Tourne la roulette quotidienne</p><p>• Grimpe dans le classement</p></div><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="padding:14px 32px;font-size:16px">Se connecter avec Discord</button></a></div>';
+  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:20px 10px"><h1 style="color:#a78bfa;font-size:26px;margin-bottom:6px">Bienvenue sur AKIHARA</h1><p style="color:#9ca3af;font-size:14px;margin-bottom:16px">Tickets à gratter • Roulette • Classement</p><div style="max-width:360px;margin:0 auto 20px;text-align:left;color:#c4b5fd;font-size:13px"><p>• Gratte des tickets premium</p><p>• Gagne des jetons</p><p>• Tourne la roulette quotidienne</p><p>• Grimpe dans le classement</p></div><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="padding:12px 28px;font-size:15px">Se connecter avec Discord</button></a></div>';
 }
 function renderNav() {
-  document.getElementById("userInfo").innerHTML = user.username + ' <span class="balance">' + user.balance + ' 🪙</span> <button onclick="logout()" style="padding:4px 10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:12px">Déconnexion</button>';
+  document.getElementById("userInfo").innerHTML = user.username + ' <span class="balance">' + user.balance + ' 🪙</span> <button onclick="logout()" style="padding:3px 8px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:11px">Déconnexion</button>';
   document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
   const tickets = await res.json();
-  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:22px">Boutique</h2><div class="grid"><div class="card"><img src="' + images.free + '"><h3>Ticket Gratuit (24h)</h3><button class="btn" onclick="claimFree()">Récupérer</button></div>';
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Boutique</h2><div class="grid"><div class="card"><img src="' + images.free + '"><h3>Ticket Gratuit (24h)</h3><button class="btn" onclick="claimFree()">Récupérer</button></div>';
   tickets.filter(t => t.type !== "free").forEach(t => {
     html += '<div class="card"><img src="' + (images[t.type] || images.bronze) + '"><h3>' + t.name + '</h3><div class="price">' + t.price + ' 🪙</div><button class="btn" onclick="buyTicket(\\'' + t.type + '\\')">Acheter</button></div>';
   });
@@ -242,7 +242,7 @@ async function buyTicket(type) {
 }
 function showScratch(win, ticketName) {
   const resultText = win > 0 ? win + " 🪙" : "Perdu";
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:320px;margin:15px auto"><h2 style="color:#a78bfa">' + ticketName + '</h2><div class="scratch-area"><div class="scratch-result" id="result" style="display:flex">' + resultText + '</div><canvas id="scratch"></canvas></div><button class="btn" onclick="loadBoutique()" style="margin-top:12px">Retour</button></div>';
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:300px;margin:10px auto"><h2 style="color:#a78bfa">' + ticketName + '</h2><div class="scratch-area"><div class="scratch-result" id="result" style="display:flex">' + resultText + '</div><canvas id="scratch"></canvas></div><button class="btn" onclick="loadBoutique()" style="margin-top:8px">Retour</button></div>';
   initScratch();
 }
 function initScratch() {
@@ -265,7 +265,7 @@ function initScratch() {
     e.preventDefault();
     const pos = getPos(e);
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 26, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 24, 0, Math.PI * 2);
     ctx.fill();
   }
   canvas.addEventListener("mousedown", () => drawing = true);
@@ -279,7 +279,7 @@ function initScratch() {
 async function loadLeaderboard() {
   const res = await fetch("/api/leaderboard");
   const leaders = await res.json();
-  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:22px">Classement</h2><div class="grid">';
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Classement</h2><div class="grid">';
   leaders.forEach((u, i) => {
     html += '<div class="card">' + (i+1) + '. <strong style="color:#c4b5fd">' + u.username + '</strong><br>' + u.total_won + ' gagnés</div>';
   });
@@ -287,12 +287,12 @@ async function loadLeaderboard() {
   document.getElementById("content").innerHTML = html;
 }
 function loadRoulette() {
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:480px;margin:15px auto;text-align:center"><h2 style="color:#a78bfa;margin-bottom:12px">🎰 Roulette Quotidienne</h2><div id="roulette" style="height:64px;overflow:hidden;background:linear-gradient(90deg,#1a1430,#2d2250,#1a1430);border-radius:12px;margin:12px 0;position:relative;border:2px solid #7c3aed"><div id="roulette-items" style="display:flex;position:absolute;height:100%;transition:none"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:3px;background:#a78bfa;transform:translateX(-50%);box-shadow:0 0 8px #a78bfa"></div></div><button class="btn" onclick="spinRoulette()" style="padding:10px 26px;font-size:15px">Tourner</button></div>';
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:440px;margin:10px auto;text-align:center"><h2 style="color:#a78bfa;margin-bottom:8px">🎰 Roulette Quotidienne</h2><div id="roulette" style="height:56px;overflow:hidden;background:linear-gradient(90deg,#1a1430,#2d2250,#1a1430);border-radius:10px;margin:8px 0;position:relative;border:2px solid #7c3aed"><div id="roulette-items" style="display:flex;position:absolute;height:100%;transition:none"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:3px;background:#a78bfa;transform:translateX(-50%);box-shadow:0 0 6px #a78bfa"></div></div><button class="btn" onclick="spinRoulette()" style="padding:8px 22px;font-size:14px">Tourner</button></div>';
   const items = document.getElementById("roulette-items");
   let html = "";
   for (let i = 0; i < 20; i++) {
     const val = Math.floor(Math.random() * 49500) + 500;
-    html += '<div style="min-width:130px;height:64px;line-height:64px;font-size:16px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
+    html += '<div style="min-width:120px;height:56px;line-height:56px;font-size:15px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
   }
   items.innerHTML = html;
 }
@@ -308,13 +308,13 @@ async function spinRoulette() {
   let html = "";
   for (let i = 0; i < 15; i++) {
     const val = Math.floor(Math.random() * 49500) + 500;
-    html += '<div style="min-width:130px;height:64px;line-height:64px;font-size:16px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
+    html += '<div style="min-width:120px;height:56px;line-height:56px;font-size:15px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
   }
-  html += '<div style="min-width:130px;height:64px;line-height:64px;font-size:18px;font-weight:bold;text-align:center;color:#a78bfa">' + data.win + ' 🪙</div>';
+  html += '<div style="min-width:120px;height:56px;line-height:56px;font-size:16px;font-weight:bold;text-align:center;color:#a78bfa">' + data.win + ' 🪙</div>';
   items.innerHTML = html;
   setTimeout(() => {
     items.style.transition = "transform 4s cubic-bezier(0.15, 0.8, 0.3, 1)";
-    items.style.transform = "translateX(-" + (15 * 130) + "px)";
+    items.style.transform = "translateX(-" + (15 * 120) + "px)";
   }, 50);
   setTimeout(() => {
     alert("Tu as gagné " + data.win + " jetons !");
@@ -325,7 +325,7 @@ function loadAdmin() {
     document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
     return;
   }
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:480px;margin:15px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><br><button class="btn" onclick="setTokens()" style="margin-top:10px">Ajouter</button><hr style="margin:16px 0;border-color:#2a2040"><h3 style="color:#a78bfa">Liste des joueurs</h3><div id="playerList">Chargement...</div></div>';
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:440px;margin:10px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:8px;margin:4px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:8px;box-sizing:border-box"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:8px;margin:4px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:8px;box-sizing:border-box"><br><button class="btn" onclick="setTokens()" style="margin-top:8px">Ajouter</button><hr style="margin:12px 0;border-color:#2a2040"><h3 style="color:#a78bfa">Liste des joueurs</h3><div id="playerList">Chargement...</div></div>';
   loadPlayerList();
 }
 async function loadPlayerList() {
@@ -333,7 +333,7 @@ async function loadPlayerList() {
   const players = await res.json();
   let html = "";
   players.forEach(p => {
-    html += '<div style="background:#1a1430;border:1px solid #2a2040;border-radius:10px;padding:8px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;font-size:14px"><div><strong>' + p.username + '</strong><br><span style="font-size:12px;color:#9ca3af">' + p.discord_id + '</span></div><div style="font-weight:bold">' + p.balance + ' 🪙</div></div>';
+    html += '<div style="background:#1a1430;border:1px solid #2a2040;border-radius:8px;padding:6px;margin:4px 0;display:flex;justify-content:space-between;align-items:center;font-size:13px"><div><strong>' + p.username + '</strong><br><span style="font-size:11px;color:#9ca3af">' + p.discord_id + '</span></div><div style="font-weight:bold">' + p.balance + ' 🪙</div></div>';
   });
   document.getElementById("playerList").innerHTML = html || "Aucun joueur";
 }
