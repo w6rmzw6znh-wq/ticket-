@@ -135,9 +135,8 @@ body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial}
 .logo{color:#a78bfa;font-size:28px;font-weight:bold}
 .nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:15px}
 .nav button{padding:12px 22px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:10px;font-weight:600}
-.container{max-width:900px;margin:0 auto;padding:15px}
+.container{width:100%;padding:15px;box-sizing:border-box}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-top:15px}
-@media(max-width:600px){.grid{grid-template-columns:1fr}}
 .card{background:#16122a;border:1px solid #2a2040;border-radius:16px;padding:15px;text-align:center}
 .card img{width:100%;border-radius:12px;margin-bottom:10px}
 .price{font-size:18px;color:#c4b5fd;margin:8px 0;font-weight:bold}
