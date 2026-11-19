@@ -1,17 +1,13 @@
 name = "scratch-club"
-main = "src/index.js"
+main = "index.js"
 compatibility_date = "2024-09-23"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "scratch-club-db"
-database_id = "YOUR_D1_DATABASE_ID_HERE"
+database_name = "ticket-akihara"
+database_id = "bfa9e4b9-24a2-4395-8472-2be5da5bd6cd"
 
 [vars]
-DISCORD_CLIENT_ID = "YOUR_DISCORD_CLIENT_ID"
-GUILD_ID = "YOUR_GUILD_ID"
-ADMIN_DISCORD_ID = "YOUR_ADMIN_DISCORD_ID"
-# Secrets (set via dashboard or wrangler secret put):
-# DISCORD_CLIENT_SECRET
-# DISCORD_BOT_TOKEN
-# SESSION_SECRET
+DISCORD_CLIENT_ID = "1572922433822924830"
+GUILD_ID = "1542222471250317484"
+ADMIN_DISCORD_ID = "1473948546674724889"
