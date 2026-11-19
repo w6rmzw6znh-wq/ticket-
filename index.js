@@ -55,6 +55,30 @@ export default {
       const players = await env.DB.prepare("SELECT discord_id, username, balance FROM users ORDER BY balance DESC").all();
       return Response.json(players.results);
     }
+    if (url.pathname === "/api/discord-shop") {
+      const items = await env.DB.prepare("SELECT * FROM discord_shop WHERE stock > 0").all();
+      return Response.json(items.results || []);
+    }
+    if (url.pathname === "/api/buy-discord" && request.method === "POST") {
+      const cookie = request.headers.get("Cookie") || "";
+      const session = cookie.match(/session=([^;]+)/)?.[1];
+      if (!session) return new Response("Unauthorized", { status: 401 });
+      const body = await request.json();
+      const item = await env.DB.prepare("SELECT * FROM discord_shop WHERE id = ? AND stock > 0").bind(body.id).first();
+      if (!item) return Response.json({ error: "Article indisponible" }, { status: 400 });
+      const user = await env.DB.prepare("SELECT * FROM users WHERE discord_id = ?").bind(session).first();
+      if (user.balance < item.price) return Response.json({ error: "Pas assez de jetons" }, { status: 400 });
+      await env.DB.prepare("UPDATE users SET balance = balance - ? WHERE discord_id = ?").bind(item.price, session).run();
+      await env.DB.prepare("UPDATE discord_shop SET stock = stock - 1 WHERE id = ?").bind(item.id).run();
+      if (env.DISCORD_BOT_TOKEN) {
+        await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
+          method: "POST",
+          headers: { "Authorization": "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
+          body: JSON.stringify({ content: "🛒 <@" + session + "> a acheté **" + item.name + "** !\nUn ticket a été ouvert pour la livraison." })
+        });
+      }
+      return Response.json({ success: true, newBalance: user.balance - item.price });
+    }
     if (url.pathname === "/api/buy" && request.method === "POST") {
       const cookie = request.headers.get("Cookie") || "";
       const session = cookie.match(/session=([^;]+)/)?.[1];
@@ -199,7 +223,7 @@ function showLogin() {
 }
 function renderNav() {
   document.getElementById("userInfo").innerHTML = user.username + ' <span class="balance">' + user.balance + ' 🪙</span> <button onclick="logout()" style="padding:4px 10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:12px">Déconnexion</button>';
-  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
+  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadDiscordShop()">Boutique Discord</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
@@ -210,6 +234,25 @@ async function loadBoutique() {
   });
   html += '</div>';
   document.getElementById("content").innerHTML = html;
+}
+async function loadDiscordShop() {
+  const res = await fetch("/api/discord-shop");
+  const items = await res.json();
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Boutique Discord</h2><div class="grid">';
+  items.forEach(item => {
+    html += '<div class="card"><h3>' + item.name + '</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">' + item.description + '</p><div class="price">' + item.price.toLocaleString() + ' 🪙</div><div style="font-size:12px;color:#6b7280;margin-bottom:8px">Stock : ' + item.stock + '</div><button class="btn" onclick="buyDiscord(' + item.id + ')">Acheter</button></div>';
+  });
+  html += '</div>';
+  document.getElementById("content").innerHTML = html || '<div class="card">Aucun article disponible</div>';
+}
+async function buyDiscord(id) {
+  const res = await fetch("/api/buy-discord", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+  const data = await res.json();
+  if (data.error) return alert(data.error);
+  user.balance = data.newBalance;
+  renderNav();
+  alert("Achat effectué ! Un ticket Discord a été ouvert.");
+  loadDiscordShop();
 }
 async function claimFree() {
   const res = await fetch("/api/free", { method: "POST" });
