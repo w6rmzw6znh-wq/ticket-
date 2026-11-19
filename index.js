@@ -69,7 +69,11 @@ export default {
       await env.DB.prepare("UPDATE users SET balance = balance + ? WHERE discord_id = ?").bind(body.amount, body.userId).run();
       return Response.json({ success: true });
     }
-    return new Response(`<!DOCTYPE html>
+    return new Response(HTML, { headers: { "Content-Type": "text/html" } });
+  }
+};
+
+const HTML = `<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -141,4 +145,16 @@ function loadAdmin() {
     document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
     return;
   }
-  document.getElementById("content").innerHTML = '<div class="card"><h2>Panneau Admin</h2><p>ID Discord du membre :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:10px;margin:5px 0;background:#111;color:#fff;border:1px solid #FFD700;border-radius:8px"><p>Montant à ajouter :</p><input id="amount" type="number" placeholder="Montant"
+  document.getElementById("content").innerHTML = '<div class="card"><h2>Panneau Admin</h2><p>ID Discord du membre :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:10px;margin:5px 0;background:#111;color:#fff;border:1px solid #FFD700;border-radius:8px"><p>Montant à ajouter :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:10px;margin:5px 0;background:#111;color:#fff;border:1px solid #FFD700;border-radius:8px"><br><button onclick="setTokens()" style="padding:12px 25px;background:#FFD700;border:none;border-radius:10px;font-weight:bold;margin-top:10px">Ajouter</button></div>';
+}
+async function setTokens() {
+  const userId = document.getElementById("targetId").value;
+  const amount = document.getElementById("amount").value;
+  if (!userId || !amount) return alert("Remplis les deux champs");
+  await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount) }) });
+  alert("Jetons ajoutés");
+}
+function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
+init();
+</script>
+</body></html>`;
