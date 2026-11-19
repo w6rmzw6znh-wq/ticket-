@@ -41,6 +41,10 @@ export default {
       const tickets = await env.DB.prepare("SELECT * FROM ticket_configs WHERE enabled = 1").all();
       return Response.json(tickets.results);
     }
+    if (url.pathname === "/api/leaderboard") {
+      const leaders = await env.DB.prepare("SELECT username, balance, total_won FROM users ORDER BY total_won DESC LIMIT 10").all();
+      return Response.json(leaders.results);
+    }
     if (url.pathname === "/api/buy" && request.method === "POST") {
       const cookie = request.headers.get("Cookie") || "";
       const session = cookie.match(/session=([^;]+)/)?.[1];
@@ -58,8 +62,41 @@ export default {
         rand -= p.chance;
         if (rand <= 0) { win = p.amount || 0; break; }
       }
-      if (win > 0) await env.DB.prepare("UPDATE users SET balance = balance + ? WHERE discord_id = ?").bind(win, session).run();
+      if (win > 0) {
+        await env.DB.prepare("UPDATE users SET balance = balance + ?, total_won = total_won + ? WHERE discord_id = ?").bind(win, win, session).run();
+        if (env.DISCORD_BOT_TOKEN) {
+          await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
+            method: "POST",
+            headers: { "Authorization": "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
+            body: JSON.stringify({ content: "🎉 **" + user.username + "** a gagné **" + win + "** jetons sur **AKIHARA** !" })
+          });
+        }
+      }
+      await env.DB.prepare("UPDATE users SET tickets_scratched = tickets_scratched + 1 WHERE discord_id = ?").bind(session).run();
       return Response.json({ win, newBalance: user.balance - ticket.price + win, ticketName: ticket.name });
+    }
+    if (url.pathname === "/api/free" && request.method === "POST") {
+      const cookie = request.headers.get("Cookie") || "";
+      const session = cookie.match(/session=([^;]+)/)?.[1];
+      if (!session) return new Response("Unauthorized", { status: 401 });
+      const user = await env.DB.prepare("SELECT * FROM users WHERE discord_id = ?").bind(session).first();
+      const now = Math.floor(Date.now() / 1000);
+      if (user.last_free_ticket && now - user.last_free_ticket < 86400) {
+        return Response.json({ error: "Ticket gratuit disponible dans " + Math.ceil((86400 - (now - user.last_free_ticket)) / 3600) + "h" }, { status: 400 });
+      }
+      await env.DB.prepare("UPDATE users SET last_free_ticket = ? WHERE discord_id = ?").bind(now, session).run();
+      const win = Math.random() < 0.5 ? Math.floor(Math.random() * 500) + 100 : 0;
+      if (win > 0) {
+        await env.DB.prepare("UPDATE users SET balance = balance + ?, total_won = total_won + ? WHERE discord_id = ?").bind(win, win, session).run();
+        if (env.DISCORD_BOT_TOKEN) {
+          await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
+            method: "POST",
+            headers: { "Authorization": "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
+            body: JSON.stringify({ content: "🎁 **" + user.username + "** a gagné **" + win + "** jetons avec le ticket gratuit !" })
+          });
+        }
+      }
+      return Response.json({ win, newBalance: user.balance + win });
     }
     if (url.pathname === "/api/admin/set-tokens" && request.method === "POST") {
       const cookie = request.headers.get("Cookie") || "";
@@ -113,16 +150,24 @@ function showLogin() {
 }
 function renderNav() {
   document.getElementById("userInfo").innerHTML = '<div style="margin-top:10px">' + user.username + ' <span style="background:#111;border:1px solid #FFD700;padding:5px 12px;border-radius:20px">' + user.balance + ' 🪙</span> <button onclick="logout()" style="margin-left:10px;padding:6px 12px;background:#111;color:#FFD700;border:1px solid #FFD700;border-radius:8px">Déconnexion</button></div>';
-  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadAdmin()">Admin</button>';
+  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadAdmin()">Admin</button>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
   const tickets = await res.json();
-  let html = '<h2 style="text-align:center;color:#FFD700">Boutique de Tickets</h2>';
+  let html = '<h2 style="text-align:center;color:#FFD700">Boutique de Tickets</h2><div class="card" style="text-align:center"><h3>Ticket Gratuit (24h)</h3><button onclick="claimFree()" style="padding:12px 25px;background:#FFD700;border:none;border-radius:10px;font-weight:bold">Récupérer</button></div>';
   tickets.forEach(t => {
     html += '<div class="card" style="text-align:center"><h3>' + t.name + '</h3><p style="font-size:24px;color:#FFD700">' + t.price + ' 🪙</p><button onclick="buyTicket(\\'' + t.type + '\\')" style="padding:12px 25px;background:#FFD700;border:none;border-radius:10px;font-weight:bold">Acheter</button></div>';
   });
   document.getElementById("content").innerHTML = html;
+}
+async function claimFree() {
+  const res = await fetch("/api/free", { method: "POST" });
+  const data = await res.json();
+  if (data.error) return alert(data.error);
+  user.balance = data.newBalance;
+  renderNav();
+  alert(data.win > 0 ? "Tu as gagné " + data.win + " jetons !" : "Perdu !");
 }
 async function buyTicket(type) {
   const res = await fetch("/api/buy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type }) });
@@ -139,6 +184,15 @@ function showScratch(win, ticketName) {
 function reveal() {
   document.getElementById("cover").style.display = "none";
   document.getElementById("result").style.display = "flex";
+}
+async function loadLeaderboard() {
+  const res = await fetch("/api/leaderboard");
+  const leaders = await res.json();
+  let html = '<h2 style="text-align:center;color:#FFD700">Classement</h2>';
+  leaders.forEach((u, i) => {
+    html += '<div class="card">' + (i+1) + '. <strong>' + u.username + '</strong> - ' + u.total_won + ' gagnés</div>';
+  });
+  document.getElementById("content").innerHTML = html;
 }
 function loadAdmin() {
   if (user.discord_id !== "1473948546674724889") {
