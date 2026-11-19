@@ -50,6 +50,20 @@ export default {
       const user = await env.DB.prepare("SELECT * FROM users WHERE discord_id = ?").bind(session).first();
       return Response.json(user || {});
     }
+    if (url.pathname === "/api/hurix-balance") {
+      const cookie = request.headers.get("Cookie") || "";
+      const session = cookie.match(/session=([^;]+)/)?.[1];
+      if (!session || !env.HURIX_API_KEY) return Response.json({ balance: 0 });
+      try {
+        const res = await fetch("https://hurix.xyz/api/v1/guild/members/" + session, {
+          headers: { Authorization: "Bearer " + env.HURIX_API_KEY }
+        });
+        const data = await res.json();
+        return Response.json({ balance: data.economy?.balance || 0 });
+      } catch(e) {
+        return Response.json({ balance: 0 });
+      }
+    }
     if (url.pathname === "/api/tickets") {
       const tickets = await env.DB.prepare("SELECT * FROM ticket_configs WHERE enabled = 1").all();
       return Response.json(tickets.results);
@@ -118,11 +132,11 @@ export default {
       const user = await env.DB.prepare("SELECT * FROM users WHERE discord_id = ?").bind(session).first();
       const now = Math.floor(Date.now() / 1000);
       if (session !== env.ADMIN_DISCORD_ID) {
-  if (user.last_roulette && now - user.last_roulette < 86400) {
-    return Response.json({ error: "Roulette disponible dans " + Math.ceil((86400 - (now - user.last_roulette)) / 3600) + "h" }, { status: 400 });
-  }
-  await env.DB.prepare("UPDATE users SET last_roulette = ? WHERE discord_id = ?").bind(now, session).run();
-}
+        if (user.last_roulette && now - user.last_roulette < 86400) {
+          return Response.json({ error: "Roulette disponible dans " + Math.ceil((86400 - (now - user.last_roulette)) / 3600) + "h" }, { status: 400 });
+        }
+        await env.DB.prepare("UPDATE users SET last_roulette = ? WHERE discord_id = ?").bind(now, session).run();
+      }
       const win = Math.floor(Math.random() * 49500) + 500;
       await env.DB.prepare("UPDATE users SET balance = balance + ?, total_won = total_won + ? WHERE discord_id = ?").bind(win, win, session).run();
       if (env.DISCORD_BOT_TOKEN) {
@@ -197,8 +211,18 @@ function showLogin() {
   document.getElementById("content").innerHTML = '<div style="text-align:center;padding:80px 20px"><h1 style="color:#a78bfa;font-size:32px">Bienvenue sur AKIHARA</h1><p style="color:#9ca3af">Connectez-vous avec Discord</p><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="margin-top:20px;padding:14px 32px;font-size:16px">Se connecter avec Discord</button></a></div>';
 }
 function renderNav() {
-  document.getElementById("userInfo").innerHTML = '<div style="margin-top:12px">' + user.username + ' <span style="background:#1a1430;border:1px solid #3b2f5e;padding:5px 14px;border-radius:20px;margin-left:8px">' + user.balance + ' 🪙</span> <button onclick="logout()" style="margin-left:10px;padding:6px 12px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px">Déconnexion</button></div>';
+  document.getElementById("userInfo").innerHTML = '<div style="margin-top:12px">' + user.username + ' <span style="background:#1a1430;border:1px solid #3b2f5e;padding:5px 14px;border-radius:20px;margin-left:8px">' + user.balance + ' 🪙 AKIHARA</span> <span id="hurixBalance" style="background:#1a1430;border:1px solid #5865F2;padding:5px 14px;border-radius:20px;margin-left:8px">... 🪙 Discord</span> <button onclick="logout()" style="margin-left:10px;padding:6px 12px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px">Déconnexion</button></div>';
   document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
+  fetchHurixBalance();
+}
+async function fetchHurixBalance() {
+  try {
+    const res = await fetch("/api/hurix-balance");
+    const data = await res.json();
+    if (data.balance !== undefined) {
+      document.getElementById("hurixBalance").textContent = data.balance + " 🪙 Discord";
+    }
+  } catch(e) {}
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
