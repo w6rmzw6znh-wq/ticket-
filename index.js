@@ -24,7 +24,7 @@ export default {
         const guilds = await guildRes.json();
         if (!Array.isArray(guilds)) return new Response("Guilds error: " + JSON.stringify(guilds), { status: 400 });
         if (!guilds.some(g => g.id === env.GUILD_ID)) return new Response("Not in server", { status: 403 });
-        await env.DB.prepare("INSERT INTO users (discord_id, username, avatar, tokens) VALUES (?, ?, ?, 50000) ON CONFLICT(discord_id) DO UPDATE SET username = ?, avatar = ?").bind(user.id, user.username, user.avatar, user.username, user.avatar).run();
+        await env.DB.prepare("INSERT INTO users (discord_id, username, avatar, balance) VALUES (?, ?, ?, 50000) ON CONFLICT(discord_id) DO UPDATE SET username = ?, avatar = ?").bind(user.id, user.username, user.avatar, user.username, user.avatar).run();
         return new Response(null, { status: 302, headers: { Location: "/", "Set-Cookie": "session=" + user.id + "; Path=/; HttpOnly; Secure; SameSite=Lax" } });
       } catch (e) {
         return new Response("Callback error: " + e.message, { status: 500 });
