@@ -137,9 +137,9 @@ body{margin:0;background:#0a0a0a;color:#fff;font-family:system-ui,Arial}
 .nav button{padding:14px 24px;background:#111;color:#FFD700;border:2px solid #FFD700;border-radius:12px;font-weight:bold;font-size:15px;transition:all .2s}
 .nav button:active{transform:scale(0.95);background:#FFD700;color:#000}
 .card{background:linear-gradient(145deg,#1a1a1a,#111);border:1px solid #333;border-radius:18px;padding:25px;margin:15px;box-shadow:0 4px 15px rgba(255,215,0,0.1)}
-.scratch-area{width:300px;height:200px;margin:25px auto;background:#222;border-radius:18px;position:relative;overflow:hidden;touch-action:none}
-canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer}
-.scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:bold;color:#FFD700;text-shadow:0 0 15px #FFD700}
+.scratch-area{width:300px;height:200px;margin:25px auto;background:#1a1a1a;border-radius:18px;position:relative;overflow:hidden;touch-action:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}
+.scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:bold;color:#FFD700;text-shadow:0 0 15px #FFD700;z-index:1}
 </style>
 </head>
 <body>
@@ -193,7 +193,7 @@ async function buyTicket(type) {
 }
 function showScratch(win, ticketName) {
   const resultText = win > 0 ? win + " 🪙" : "Perdu";
-  document.getElementById("content").innerHTML = '<div class="card" style="text-align:center"><h2 style="color:#FFD700">' + ticketName + '</h2><div class="scratch-area"><canvas id="scratch"></canvas><div class="scratch-result" id="result" style="display:none">' + resultText + '</div></div><button onclick="loadBoutique()" style="margin-top:20px;padding:12px 25px;background:#111;color:#FFD700;border:2px solid #FFD700;border-radius:12px;font-weight:bold">Retour boutique</button></div>';
+  document.getElementById("content").innerHTML = '<div class="card" style="text-align:center"><h2 style="color:#FFD700">' + ticketName + '</h2><div class="scratch-area"><div class="scratch-result" id="result" style="display:flex">' + resultText + '</div><canvas id="scratch"></canvas></div><button onclick="loadBoutique()" style="margin-top:20px;padding:12px 25px;background:#111;color:#FFD700;border:2px solid #FFD700;border-radius:12px;font-weight:bold">Retour boutique</button></div>';
   initScratch();
 }
 function initScratch() {
@@ -216,7 +216,7 @@ function initScratch() {
     e.preventDefault();
     const pos = getPos(e);
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 25, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 30, 0, Math.PI * 2);
     ctx.fill();
   }
   canvas.addEventListener("mousedown", () => drawing = true);
@@ -226,7 +226,6 @@ function initScratch() {
   canvas.addEventListener("touchstart", (e) => { drawing = true; scratch(e); });
   canvas.addEventListener("touchend", () => drawing = false);
   canvas.addEventListener("touchmove", scratch);
-  setTimeout(() => { document.getElementById("result").style.display = "flex"; }, 3000);
 }
 async function loadLeaderboard() {
   const res = await fetch("/api/leaderboard");
