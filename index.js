@@ -41,6 +41,26 @@ export default {
       const tickets = await env.DB.prepare("SELECT * FROM ticket_configs WHERE enabled = 1").all();
       return Response.json(tickets.results);
     }
+    if (url.pathname === "/api/buy" && request.method === "POST") {
+      const cookie = request.headers.get("Cookie") || "";
+      const session = cookie.match(/session=([^;]+)/)?.[1];
+      if (!session) return new Response("Unauthorized", { status: 401 });
+      const body = await request.json();
+      const ticket = await env.DB.prepare("SELECT * FROM ticket_configs WHERE type = ?").bind(body.type).first();
+      if (!ticket) return Response.json({ error: "Ticket introuvable" }, { status: 404 });
+      const user = await env.DB.prepare("SELECT * FROM users WHERE discord_id = ?").bind(session).first();
+      if (user.balance < ticket.price) return Response.json({ error: "Pas assez de jetons" }, { status: 400 });
+      await env.DB.prepare("UPDATE users SET balance = balance - ? WHERE discord_id = ?").bind(ticket.price, session).run();
+      const probs = JSON.parse(ticket.probabilities || "[]");
+      let rand = Math.random() * 100;
+      let win = 0;
+      for (const p of probs) {
+        rand -= p.chance;
+        if (rand <= 0) { win = p.amount || 0; break; }
+      }
+      if (win > 0) await env.DB.prepare("UPDATE users SET balance = balance + ? WHERE discord_id = ?").bind(win, session).run();
+      return Response.json({ win, newBalance: user.balance - ticket.price + win });
+    }
     if (url.pathname === "/api/admin/set-tokens" && request.method === "POST") {
       const cookie = request.headers.get("Cookie") || "";
       const session = cookie.match(/session=([^;]+)/)?.[1];
@@ -93,9 +113,18 @@ async function loadBoutique() {
   const tickets = await res.json();
   let html = '<h2 style="text-align:center;color:#FFD700">Boutique de Tickets</h2>';
   tickets.forEach(t => {
-    html += '<div class="card" style="text-align:center"><h3>' + t.name + '</h3><p style="font-size:24px;color:#FFD700">' + t.price + ' 🪙</p><button style="padding:12px 25px;background:#FFD700;border:none;border-radius:10px;font-weight:bold">Acheter</button></div>';
+    html += '<div class="card" style="text-align:center"><h3>' + t.name + '</h3><p style="font-size:24px;color:#FFD700">' + t.price + ' 🪙</p><button onclick="buyTicket(\\'' + t.type + '\\')" style="padding:12px 25px;background:#FFD700;border:none;border-radius:10px;font-weight:bold">Acheter</button></div>';
   });
   document.getElementById("content").innerHTML = html;
+}
+async function buyTicket(type) {
+  const res = await fetch("/api/buy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type }) });
+  const data = await res.json();
+  if (data.error) return alert(data.error);
+  alert(data.win > 0 ? "Tu as gagné " + data.win + " jetons !" : "Perdu !");
+  user.balance = data.newBalance;
+  renderNav();
+  loadBoutique();
 }
 function loadAdmin() {
   if (user.discord_id !== "1473948546674724889") {
