@@ -255,6 +255,10 @@ body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial;min-heig
 .scratch-area{width:260px;height:150px;margin:12px auto;background:#1a1430;border-radius:14px;position:relative;overflow:hidden;touch-action:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}
 .scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:bold;color:#c4b5fd;z-index:1}
+.bj-card{display:inline-flex;align-items:center;justify-content:center;width:52px;height:72px;background:#fff;color:#1a1430;border-radius:8px;font-weight:bold;font-size:18px;margin:4px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.bj-card.red{color:#e11d48}
+.bj-hidden{background:#7c3aed;color:#7c3aed}
+.bj-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
 .footer{text-align:center;padding:8px;font-size:12px;color:#6b7280;border-top:1px solid #1a1430;flex-shrink:0}
 </style>
 </head>
@@ -288,7 +292,7 @@ function showLogin() {
 }
 function renderNav() {
   document.getElementById("userInfo").innerHTML = user.username + ' <span class="balance">' + user.balance + ' jetons</span> <button onclick="logout()" style="padding:4px 10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:12px">Deconnexion</button>';
-  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadDiscordShop()">Boutique Discord</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
+  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadDiscordShop()">Boutique Discord</button><button onclick="loadBlackjack()">Blackjack</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
@@ -414,6 +418,95 @@ async function spinRoulette() {
   setTimeout(() => {
     alert("Tu as gagne " + data.win + " jetons !");
   }, 4200);
+}
+let bjDeck = [], bjPlayer = [], bjDealer = [], bjBet = 0, bjDone = false;
+function loadBlackjack() {
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:460px;margin:10px auto"><h2 style="color:#a78bfa;text-align:center">Blackjack</h2><p>Mise :</p><input id="bjBet" type="number" value="100" min="1" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><button class="btn" onclick="startBj()" style="width:100%">Nouvelle main</button><div id="bjArea"></div></div>';
+}
+function makeDeck() {
+  const suits = ["S","H","D","C"];
+  const ranks = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
+  let d = [];
+  for (let s of suits) for (let r of ranks) d.push(r + s);
+  for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; }
+  return d;
+}
+function cardVal(c) {
+  const r = c.slice(0, -1);
+  if (r === "A") return 11;
+  if (["J","Q","K"].includes(r)) return 10;
+  return parseInt(r, 10);
+}
+function handScore(h) {
+  let s = 0, aces = 0;
+  for (let c of h) { s += cardVal(c); if (c.startsWith("A")) aces++; }
+  while (s > 21 && aces > 0) { s -= 10; aces--; }
+  return s;
+}
+function renderCard(c, hidden) {
+  if (hidden) return '<div class="bj-card bj-hidden">?</div>';
+  const r = c.slice(0, -1);
+  const suit = c.slice(-1);
+  const red = suit === "H" || suit === "D";
+  return '<div class="bj-card' + (red ? ' red' : '') + '">' + r + '</div>';
+}
+function renderBj() {
+  const area = document.getElementById("bjArea");
+  if (!area) return;
+  let html = '<div style="margin-top:16px"><div style="color:#9ca3af;font-size:13px">Dealer</div><div>' + bjDealer.map((c, i) => renderCard(c, !bjDone && i === 1)).join("") + '</div>';
+  html += '<div style="margin-top:12px;color:#9ca3af;font-size:13px">Joueur (' + handScore(bjPlayer) + ')</div><div>' + bjPlayer.map(c => renderCard(c, false)).join("") + '</div>';
+  if (!bjDone) {
+    html += '<div class="bj-actions"><button class="btn" onclick="bjHit()">Tirer</button><button class="btn" onclick="bjStand()">Rester</button><button class="btn" onclick="bjDouble()">Doubler</button></div>';
+  } else {
+    html += '<div style="text-align:center;margin-top:12px;font-weight:bold;color:#a78bfa" id="bjResult"></div>';
+  }
+  area.innerHTML = html;
+}
+async function startBj() {
+  const bet = parseInt(document.getElementById("bjBet").value, 10);
+  if (!bet || bet <= 0 || bet > user.balance) return alert("Mise invalide");
+  bjBet = bet;
+  bjDone = false;
+  bjDeck = makeDeck();
+  bjPlayer = [bjDeck.pop(), bjDeck.pop()];
+  bjDealer = [bjDeck.pop(), bjDeck.pop()];
+  user.balance -= bjBet;
+  renderNav();
+  renderBj();
+  if (handScore(bjPlayer) === 21) endBj();
+}
+function bjHit() {
+  if (bjDone) return;
+  bjPlayer.push(bjDeck.pop());
+  renderBj();
+  if (handScore(bjPlayer) > 21) endBj();
+}
+function bjStand() {
+  if (bjDone) return;
+  endBj();
+}
+function bjDouble() {
+  if (bjDone || user.balance < bjBet) return;
+  user.balance -= bjBet;
+  bjBet *= 2;
+  renderNav();
+  bjHit();
+  if (!bjDone) endBj();
+}
+function endBj() {
+  bjDone = true;
+  while (handScore(bjDealer) < 17) bjDealer.push(bjDeck.pop());
+  renderBj();
+  const ps = handScore(bjPlayer), ds = handScore(bjDealer);
+  let msg = "", gain = 0;
+  if (ps > 21) msg = "Buste ! Perdu";
+  else if (ds > 21 || ps > ds) { msg = "Gagne !"; gain = bjBet * 2; }
+  else if (ps === ds) { msg = "Egalite"; gain = bjBet; }
+  else msg = "Perdu";
+  if (gain > 0) user.balance += gain;
+  renderNav();
+  const el = document.getElementById("bjResult");
+  if (el) el.textContent = msg + (gain ? " +" + gain + " jetons" : "");
 }
 function loadAdmin() {
   if (user.discord_id !== "1473948546674724889") {
