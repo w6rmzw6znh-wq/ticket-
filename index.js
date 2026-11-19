@@ -4,19 +4,6 @@ export default {
     if (url.pathname === "/api/logout") {
       return new Response(null, { status: 302, headers: { Location: "/", "Set-Cookie": "session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0" } });
     }
-    if (url.pathname === "/api/test-discord") {
-      try {
-        const res = await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
-          method: "POST",
-          headers: { "Authorization": "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
-          body: JSON.stringify({ content: "✅ Test depuis AKIHARA" })
-        });
-        const data = await res.json();
-        return Response.json({ status: res.status, data });
-      } catch (e) {
-        return Response.json({ error: e.message });
-      }
-    }
     if (url.pathname === "/api/auth/callback") {
       try {
         const code = url.searchParams.get("code");
@@ -167,7 +154,7 @@ body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial;min-heig
 .header{text-align:center;padding:10px 8px;background:#0f0b1e;border-bottom:1px solid #2a2040}
 .logo{color:#a78bfa;font-size:20px;font-weight:bold}
 .user-bar{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:6px;margin-top:6px;font-size:13px}
-.balance{background:#1a1430;border:1px solid #3b2f5e;padding:3px 10px;border-radius:14px;white-space:nowrap}
+.balance{background:#1a1430;border:1px solid #3b2f5e;padding:3px 10px;border-radius:14px}
 .nav{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px}
 .nav button{padding:8px 14px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-weight:600;font-size:12px}
 .container{width:100%;padding:8px;box-sizing:border-box;flex:1;overflow-y:auto}
@@ -242,4 +229,110 @@ async function buyTicket(type) {
 }
 function showScratch(win, ticketName) {
   const resultText = win > 0 ? win + " 🪙" : "Perdu";
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:300px;margin:10px auto"><h2 style="color:#a78bfa">' + ticketName + '</h2><div class="scratch-area"><div
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:300px;margin:10px auto"><h2 style="color:#a78bfa">' + ticketName + '</h2><div class="scratch-area"><div class="scratch-result" id="result" style="display:flex">' + resultText + '</div><canvas id="scratch"></canvas></div><button class="btn" onclick="loadBoutique()" style="margin-top:8px">Retour</button></div>';
+  initScratch();
+}
+function initScratch() {
+  const canvas = document.getElementById("scratch");
+  const ctx = canvas.getContext("2d");
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
+  ctx.fillStyle = "#7c3aed";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalCompositeOperation = "destination-out";
+  let drawing = false;
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: touch.clientX - r.left, y: touch.clientY - r.top };
+  }
+  function scratch(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 24, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  canvas.addEventListener("mousedown", () => drawing = true);
+  canvas.addEventListener("mouseup", () => drawing = false);
+  canvas.addEventListener("mouseleave", () => drawing = false);
+  canvas.addEventListener("mousemove", scratch);
+  canvas.addEventListener("touchstart", (e) => { drawing = true; scratch(e); });
+  canvas.addEventListener("touchend", () => drawing = false);
+  canvas.addEventListener("touchmove", scratch);
+}
+async function loadLeaderboard() {
+  const res = await fetch("/api/leaderboard");
+  const leaders = await res.json();
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Classement</h2><div class="grid">';
+  leaders.forEach((u, i) => {
+    html += '<div class="card">' + (i+1) + '. <strong style="color:#c4b5fd">' + u.username + '</strong><br>' + u.total_won + ' gagnés</div>';
+  });
+  html += '</div>';
+  document.getElementById("content").innerHTML = html;
+}
+function loadRoulette() {
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:440px;margin:10px auto;text-align:center"><h2 style="color:#a78bfa;margin-bottom:8px">🎰 Roulette Quotidienne</h2><div id="roulette" style="height:56px;overflow:hidden;background:linear-gradient(90deg,#1a1430,#2d2250,#1a1430);border-radius:10px;margin:8px 0;position:relative;border:2px solid #7c3aed"><div id="roulette-items" style="display:flex;position:absolute;height:100%;transition:none"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:3px;background:#a78bfa;transform:translateX(-50%);box-shadow:0 0 6px #a78bfa"></div></div><button class="btn" onclick="spinRoulette()" style="padding:8px 22px;font-size:14px">Tourner</button></div>';
+  const items = document.getElementById("roulette-items");
+  let html = "";
+  for (let i = 0; i < 20; i++) {
+    const val = Math.floor(Math.random() * 49500) + 500;
+    html += '<div style="min-width:120px;height:56px;line-height:56px;font-size:15px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
+  }
+  items.innerHTML = html;
+}
+async function spinRoulette() {
+  const res = await fetch("/api/roulette", { method: "POST" });
+  const data = await res.json();
+  if (data.error) return alert(data.error);
+  user.balance = data.newBalance;
+  renderNav();
+  const items = document.getElementById("roulette-items");
+  items.style.transition = "none";
+  items.style.transform = "translateX(0)";
+  let html = "";
+  for (let i = 0; i < 15; i++) {
+    const val = Math.floor(Math.random() * 49500) + 500;
+    html += '<div style="min-width:120px;height:56px;line-height:56px;font-size:15px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
+  }
+  html += '<div style="min-width:120px;height:56px;line-height:56px;font-size:16px;font-weight:bold;text-align:center;color:#a78bfa">' + data.win + ' 🪙</div>';
+  items.innerHTML = html;
+  setTimeout(() => {
+    items.style.transition = "transform 4s cubic-bezier(0.15, 0.8, 0.3, 1)";
+    items.style.transform = "translateX(-" + (15 * 120) + "px)";
+  }, 50);
+  setTimeout(() => {
+    alert("Tu as gagné " + data.win + " jetons !");
+  }, 4200);
+}
+function loadAdmin() {
+  if (user.discord_id !== "1473948546674724889") {
+    document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
+    return;
+  }
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:440px;margin:10px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:8px;margin:4px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:8px;box-sizing:border-box"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:8px;margin:4px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:8px;box-sizing:border-box"><br><button class="btn" onclick="setTokens()" style="margin-top:8px">Ajouter</button><hr style="margin:12px 0;border-color:#2a2040"><h3 style="color:#a78bfa">Liste des joueurs</h3><div id="playerList">Chargement...</div></div>';
+  loadPlayerList();
+}
+async function loadPlayerList() {
+  const res = await fetch("/api/admin/players");
+  const players = await res.json();
+  let html = "";
+  players.forEach(p => {
+    html += '<div style="background:#1a1430;border:1px solid #2a2040;border-radius:8px;padding:6px;margin:4px 0;display:flex;justify-content:space-between;align-items:center;font-size:13px"><div><strong>' + p.username + '</strong><br><span style="font-size:11px;color:#9ca3af">' + p.discord_id + '</span></div><div style="font-weight:bold">' + p.balance + ' 🪙</div></div>';
+  });
+  document.getElementById("playerList").innerHTML = html || "Aucun joueur";
+}
+async function setTokens() {
+  const userId = document.getElementById("targetId").value;
+  const amount = document.getElementById("amount").value;
+  if (!userId || !amount) return alert("Remplis les deux champs");
+  await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount) }) });
+  alert("Jetons ajoutés");
+  loadPlayerList();
+}
+function logout() { location.href = "/api/logout"; }
+init();
+</script>
+</body></html>`;
