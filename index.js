@@ -59,14 +59,14 @@ export default {
         if (rand <= 0) { win = p.amount || 0; break; }
       }
       if (win > 0) await env.DB.prepare("UPDATE users SET balance = balance + ? WHERE discord_id = ?").bind(win, session).run();
-      return Response.json({ win, newBalance: user.balance - ticket.price + win });
+      return Response.json({ win, newBalance: user.balance - ticket.price + win, ticketName: ticket.name });
     }
     if (url.pathname === "/api/admin/set-tokens" && request.method === "POST") {
       const cookie = request.headers.get("Cookie") || "";
       const session = cookie.match(/session=([^;]+)/)?.[1];
       if (session !== env.ADMIN_DISCORD_ID) return new Response("Forbidden", { status: 403 });
       const body = await request.json();
-      await env.DB.prepare("UPDATE users SET balance = ? WHERE discord_id = ?").bind(body.amount, body.userId).run();
+      await env.DB.prepare("UPDATE users SET balance = balance + ? WHERE discord_id = ?").bind(body.amount, body.userId).run();
       return Response.json({ success: true });
     }
     return new Response(`<!DOCTYPE html>
@@ -82,6 +82,9 @@ body{margin:0;background:#000;color:#fff;font-family:Arial}
 .nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:15px}
 .nav button{padding:12px 20px;background:#111;color:#FFD700;border:1px solid #FFD700;border-radius:10px;font-weight:bold}
 .card{background:#111;border:1px solid #333;border-radius:15px;padding:20px;margin:15px}
+.scratch-area{width:280px;height:180px;margin:20px auto;background:#333;border-radius:15px;position:relative;overflow:hidden;cursor:pointer}
+.scratch-cover{position:absolute;inset:0;background:linear-gradient(45deg,#FFD700,#B8860B);display:flex;align-items:center;justify-content:center;font-weight:bold;color:#000;font-size:18px}
+.scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#FFD700}
 </style>
 </head>
 <body>
@@ -121,28 +124,21 @@ async function buyTicket(type) {
   const res = await fetch("/api/buy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type }) });
   const data = await res.json();
   if (data.error) return alert(data.error);
-  alert(data.win > 0 ? "Tu as gagné " + data.win + " jetons !" : "Perdu !");
   user.balance = data.newBalance;
   renderNav();
-  loadBoutique();
+  showScratch(data.win, data.ticketName);
+}
+function showScratch(win, ticketName) {
+  const resultText = win > 0 ? win + " 🪙" : "Perdu";
+  document.getElementById("content").innerHTML = '<div class="card" style="text-align:center"><h2>' + ticketName + '</h2><div class="scratch-area" onclick="reveal()"><div class="scratch-cover" id="cover">Gratte ici</div><div class="scratch-result" id="result" style="display:none">' + resultText + '</div></div><button onclick="loadBoutique()" style="margin-top:15px;padding:10px 20px;background:#111;color:#FFD700;border:1px solid #FFD700;border-radius:10px">Retour boutique</button></div>';
+}
+function reveal() {
+  document.getElementById("cover").style.display = "none";
+  document.getElementById("result").style.display = "flex";
 }
 function loadAdmin() {
   if (user.discord_id !== "1473948546674724889") {
     document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
     return;
   }
-  document.getElementById("content").innerHTML = '<div class="card"><h2>Panneau Admin</h2><p>ID Discord du membre :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:10px;margin:5px 0;background:#111;color:#fff;border:1px solid #FFD700;border-radius:8px"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:10px;margin:5px 0;background:#111;color:#fff;border:1px solid #FFD700;border-radius:8px"><br><button onclick="setTokens()" style="padding:12px 25px;background:#FFD700;border:none;border-radius:10px;font-weight:bold;margin-top:10px">Set</button></div>';
-}
-async function setTokens() {
-  const userId = document.getElementById("targetId").value;
-  const amount = document.getElementById("amount").value;
-  if (!userId || !amount) return alert("Remplis les deux champs");
-  await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount) }) });
-  alert("Jetons mis à jour");
-}
-function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
-init();
-</script>
-</body></html>`, { headers: { "Content-Type": "text/html" } });
-  }
-};
+  document.getElementById("content").innerHTML = '<div class="card"><h2>Panneau Admin</h2><p>ID Discord du membre :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:10px;margin:5px 0;background:#111;color:#fff;border:1px solid #FFD700;border-radius:8px"><p>Montant à ajouter :</p><input id="amount" type="number" placeholder="Montant"
