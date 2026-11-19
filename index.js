@@ -170,7 +170,7 @@ async function loadBoutique() {
   const res = await fetch("/api/tickets");
   const tickets = await res.json();
   let html = '<h2 style="text-align:center;color:#FFD700;font-size:28px">Boutique de Tickets</h2><div class="card" style="text-align:center"><h3 style="color:#FFD700">Ticket Gratuit (24h)</h3><button onclick="claimFree()" style="padding:14px 30px;background:#FFD700;border:none;border-radius:12px;font-weight:bold;font-size:16px;margin-top:10px">Récupérer</button></div>';
-  tickets.forEach(t => {
+  tickets.filter(t => t.type !== "free").forEach(t => {
     html += '<div class="card" style="text-align:center"><h3 style="font-size:22px">' + t.name + '</h3><p style="font-size:28px;color:#FFD700;margin:15px 0">' + t.price + ' 🪙</p><button onclick="buyTicket(\\'' + t.type + '\\')" style="padding:14px 30px;background:#FFD700;border:none;border-radius:12px;font-weight:bold;font-size:16px">Acheter</button></div>';
   });
   document.getElementById("content").innerHTML = html;
