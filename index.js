@@ -117,10 +117,12 @@ export default {
       if (!session) return new Response("Unauthorized", { status: 401 });
       const user = await env.DB.prepare("SELECT * FROM users WHERE discord_id = ?").bind(session).first();
       const now = Math.floor(Date.now() / 1000);
-      if (user.last_roulette && now - user.last_roulette < 86400) {
-        return Response.json({ error: "Roulette disponible dans " + Math.ceil((86400 - (now - user.last_roulette)) / 3600) + "h" }, { status: 400 });
-      }
-      await env.DB.prepare("UPDATE users SET last_roulette = ? WHERE discord_id = ?").bind(now, session).run();
+      if (session !== env.ADMIN_DISCORD_ID) {
+  if (user.last_roulette && now - user.last_roulette < 86400) {
+    return Response.json({ error: "Roulette disponible dans " + Math.ceil((86400 - (now - user.last_roulette)) / 3600) + "h" }, { status: 400 });
+  }
+  await env.DB.prepare("UPDATE users SET last_roulette = ? WHERE discord_id = ?").bind(now, session).run();
+}
       const win = Math.floor(Math.random() * 49500) + 500;
       await env.DB.prepare("UPDATE users SET balance = balance + ?, total_won = total_won + ? WHERE discord_id = ?").bind(win, win, session).run();
       if (env.DISCORD_BOT_TOKEN) {
