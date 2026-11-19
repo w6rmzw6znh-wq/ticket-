@@ -262,8 +262,9 @@ canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2
 .bj-card.hidden{background:linear-gradient(145deg,#7c3aed,#5b21b6);color:#7c3aed}
 .bj-score{text-align:center;font-size:13px;color:#c4b5fd;margin-top:4px}
 .bj-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
-.game-card{background:#16122a;border:1px solid #2a2040;border-radius:14px;padding:16px;text-align:center;cursor:pointer}
+.game-card{background:#16122a;border:1px solid #2a2040;border-radius:14px;padding:12px;text-align:center;cursor:pointer}
 .game-card:hover{border-color:#7c3aed}
+.game-card img{width:100%;border-radius:10px;margin-bottom:8px}
 .footer{text-align:center;padding:8px;font-size:12px;color:#6b7280;border-top:1px solid #1a1430;flex-shrink:0}
 </style>
 </head>
@@ -282,7 +283,8 @@ const images = {
   bronze: "https://cdn.discordapp.com/attachments/1571623648303783942/1572966264299585566/IMG_2819.png?ex=6b004a7d&is=6afef8fd&hm=49cece172187d1aeaa715771dada4d43531a022784af6deaee2c0b05dec8b0ee&",
   silver: "https://cdn.discordapp.com/attachments/1571623648303783942/1572966456185061518/IMG_2820.png?ex=6b004aab&is=6afef92b&hm=f70b7d4c70d0628834d0903df906261f7782ba85d5459b1d17a3c064bf050087&",
   gold: "https://cdn.discordapp.com/attachments/1571623648303783942/1572966585101058178/IMG_2821.png?ex=6b004aca&is=6afef94a&hm=061d249def798ff2b0e2d4792ec2c9e50c5af8fb60565a18ae2b8db8023cac50&",
-  diamond: "https://cdn.discordapp.com/attachments/1571623648303783942/1572966713069412513/IMG_2822.png?ex=6b004ae8&is=6afef968&hm=ebf7dd60b3ec05e63204dd3204ee2ac7184e9f137917a0fb79eb167d83437289&"
+  diamond: "https://cdn.discordapp.com/attachments/1571623648303783942/1572966713069412513/IMG_2822.png?ex=6b004ae8&is=6afef968&hm=ebf7dd60b3ec05e63204dd3204ee2ac7184e9f137917a0fb79eb167d83437289&",
+  blackjack: "https://cdn.discordapp.com/attachments/1571623648303783942/1573114784465817741/IMG_2876.png?ex=6b00d4cf&is=6aff834f&hm=c7012eb926d0ff1fb2751337d9f4e1a52c9e6ab531c1d82ac5385594eee1e566&"
 };
 async function init() {
   try {
@@ -300,7 +302,7 @@ function renderNav() {
   document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadDiscordShop()">Boutique Discord</button><button onclick="loadJeux()">Jeux</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
 }
 function loadJeux() {
-  document.getElementById("content").innerHTML = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Jeux</h2><div class="grid"><div class="game-card" onclick="loadBlackjack()"><h3 style="color:#c4b5fd">Blackjack</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Joue contre le dealer</p><button class="btn">Jouer</button></div></div>';
+  document.getElementById("content").innerHTML = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Jeux</h2><div class="grid"><div class="game-card" onclick="loadBlackjack()"><img src="' + images.blackjack + '"><h3 style="color:#c4b5fd">Blackjack</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Joue contre le dealer</p><button class="btn">Jouer</button></div></div>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
