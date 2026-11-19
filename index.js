@@ -141,7 +141,7 @@ function showLogin() {
     <div style="text-align:center; padding:80px 20px;">
       <h1 style="color:#FFD700;">Bienvenue sur SCRATCH CLUB</h1>
       <p>Connectez-vous avec Discord pour jouer</p>
-      <a href="https://discord.com/oauth2/authorize?client_id=${env.DISCORD_CLIENT_ID}&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds">
+      <a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds">
         <button style="padding:15px 30px; background:#5865F2; color:white; border:none; border-radius:10px; font-size:16px;">Se connecter avec Discord</button>
       </a>
     </div>\`;
@@ -193,7 +193,7 @@ function loadJouer() {
 }
 
 async function loadAdmin() {
-  if (user.discord_id !== '${env.ADMIN_DISCORD_ID}') {
+  if (user.discord_id !== '1473948546674724889') {
     document.getElementById('content').innerHTML = '<div class="card">Accès refusé</div>';
     return;
   }
