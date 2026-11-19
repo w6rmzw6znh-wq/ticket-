@@ -105,7 +105,7 @@ export default {
       return Response.json(leaders.results || []);
     }
 
-    // Liste des joueurs pour l'administration
+    // Administration : liste des joueurs
     if (url.pathname === "/api/admin/players") {
       const cookie = request.headers.get("Cookie") || "";
       const session = cookie.match(/session=([^;]+)/)?.[1];
@@ -130,7 +130,7 @@ export default {
       return Response.json(items.results || []);
     }
 
-    // Achat dans la boutique Discord et création du ticket
+    // Achat boutique Discord et création du ticket
     if (url.pathname === "/api/buy-discord" && request.method === "POST") {
       const cookie = request.headers.get("Cookie") || "";
       const session = cookie.match(/session=([^;]+)/)?.[1];
@@ -170,7 +170,7 @@ export default {
         return Response.json({ error: "Utilisateur introuvable" }, { status: 404 });
       }
 
-      // Retrait d'une unité du stock
+      // Retrait du stock
       const stockUpdate = await env.DB.prepare(
         "UPDATE discord_shop SET stock = stock - 1 WHERE id = ? AND stock > 0"
       ).bind(itemId).run();
@@ -192,7 +192,9 @@ export default {
         return Response.json({ error: "Pas assez de jetons" }, { status: 400 });
       }
 
-      // Permissions du salon
+      // Permissions du ticket
+      const staffRole = env.STAFF_ROLE_ID || "1555283320508780757";
+
       const overwrites = [
         {
           id: env.GUILD_ID,
@@ -205,7 +207,7 @@ export default {
           allow: "68608"
         },
         {
-          id: env.STAFF_ROLE_ID || "1555283320508780757",
+          id: staffRole,
           type: 0,
           allow: "68608"
         }
@@ -249,7 +251,9 @@ export default {
           "UPDATE discord_shop SET stock = stock + 1 WHERE id = ?"
         ).bind(itemId).run();
 
-        return Response.json({ error: "Erreur de connexion à Discord : " + e.message }, { status: 502 });
+        return Response.json({
+          error: "Erreur de connexion à Discord : " + e.message
+        }, { status: 502 });
       }
 
       if (!ticketRes.ok) {
@@ -271,20 +275,86 @@ export default {
 
       const ticket = await ticketRes.json();
 
-      // Message envoyé dans le nouveau salon
-      await fetch(
-        "https://discord.com/api/v10/channels/" + ticket.id + "/messages",
-        {
-          method: "POST",
-          headers: {
-            "Authorization": "Bot " + env.DISCORD_BOT_TOKEN,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            content: "🎫 Ton ticket a bien été créé ! L'équipe staff va te répondre."
-          })
-        }
-      );
+      // Message détaillé de la commande
+      const orderDate = new Date().toLocaleString("fr-FR", {
+        timeZone: "Europe/Paris"
+      });
+
+      let messageRes;
+
+      try {
+        messageRes = await fetch(
+          "https://discord.com/api/v10/channels/" + ticket.id + "/messages",
+          {
+            method: "POST",
+            headers: {
+              "Authorization": "Bot " + env.DISCORD_BOT_TOKEN,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              content:
+                "🎫 **Nouvelle commande AKIHARA !**\n" +
+                "<@" + session + "> <@&" + staffRole + ">",
+              embeds: [
+                {
+                  title: "📦 Détails de la commande",
+                  color: 0x7c3aed,
+                  fields: [
+                    {
+                      name: "🛍️ Article commandé",
+                      value: String(item.name),
+                      inline: false
+                    },
+                    {
+                      name: "💰 Prix payé",
+                      value: Number(item.price).toLocaleString("fr-FR") + " jetons 🪙",
+                      inline: true
+                    },
+                    {
+                      name: "👤 Client",
+                      value: String(user.username),
+                      inline: true
+                    },
+                    {
+                      name: "🆔 Identifiant Discord",
+                      value: session,
+                      inline: false
+                    },
+                    {
+                      name: "📅 Date de la commande",
+                      value: orderDate,
+                      inline: false
+                    },
+                    {
+                      name: "🟠 Statut",
+                      value: "En attente de traitement",
+                      inline: false
+                    }
+                  ],
+                  footer: {
+                    text: "AKIHARA • Système de commandes"
+                  },
+                  timestamp: new Date().toISOString()
+                }
+              ],
+              allowed_mentions: {
+                parse: [],
+                users: [session],
+                roles: [staffRole]
+              }
+            })
+          }
+        );
+      } catch (e) {
+        console.error("Erreur envoi message ticket:", e.message);
+      }
+
+      if (messageRes && !messageRes.ok) {
+        console.error(
+          "Erreur Discord message:",
+          await messageRes.text()
+        );
+      }
 
       const updatedUser = await env.DB.prepare(
         "SELECT balance FROM users WHERE discord_id = ?"
@@ -293,7 +363,8 @@ export default {
       return Response.json({
         success: true,
         ticketId: ticket.id,
-        newBalance: updatedUser.balance
+        newBalance: updatedUser.balance,
+        messageSent: Boolean(messageRes && messageRes.ok)
       });
     }
 
@@ -304,7 +375,12 @@ export default {
 
       if (!session) return new Response("Unauthorized", { status: 401 });
 
-      const body = await request.json();
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return Response.json({ error: "Requête invalide" }, { status: 400 });
+      }
 
       const ticket = await env.DB.prepare(
         "SELECT * FROM ticket_configs WHERE type = ?"
@@ -318,17 +394,30 @@ export default {
         "SELECT * FROM users WHERE discord_id = ?"
       ).bind(session).first();
 
-      if (!user) return Response.json({ error: "Utilisateur introuvable" }, { status: 404 });
+      if (!user) {
+        return Response.json({ error: "Utilisateur introuvable" }, { status: 404 });
+      }
 
       if (user.balance < ticket.price) {
         return Response.json({ error: "Pas assez de jetons" }, { status: 400 });
       }
 
-      await env.DB.prepare(
-        "UPDATE users SET balance = balance - ? WHERE discord_id = ?"
-      ).bind(ticket.price, session).run();
+      const debit = await env.DB.prepare(
+        "UPDATE users SET balance = balance - ? WHERE discord_id = ? AND balance >= ?"
+      ).bind(ticket.price, session, ticket.price).run();
 
-      const probs = JSON.parse(ticket.probabilities || "[]");
+      if (!debit.meta || debit.meta.changes !== 1) {
+        return Response.json({ error: "Pas assez de jetons" }, { status: 400 });
+      }
+
+      let probs;
+
+      try {
+        probs = JSON.parse(ticket.probabilities || "[]");
+      } catch {
+        return Response.json({ error: "Configuration des probabilités invalide" }, { status: 500 });
+      }
+
       let rand = Math.random() * 100;
       let win = 0;
 
@@ -381,7 +470,9 @@ export default {
         "SELECT * FROM users WHERE discord_id = ?"
       ).bind(session).first();
 
-      if (!user) return Response.json({ error: "Utilisateur introuvable" }, { status: 404 });
+      if (!user) {
+        return Response.json({ error: "Utilisateur introuvable" }, { status: 404 });
+      }
 
       const now = Math.floor(Date.now() / 1000);
 
@@ -396,7 +487,9 @@ export default {
         "UPDATE users SET last_free_ticket = ? WHERE discord_id = ?"
       ).bind(now, session).run();
 
-      const win = Math.random() < 0.5 ? Math.floor(Math.random() * 500) + 100 : 0;
+      const win = Math.random() < 0.5
+        ? Math.floor(Math.random() * 500) + 100
+        : 0;
 
       if (win > 0) {
         await env.DB.prepare(
@@ -417,7 +510,10 @@ export default {
         }
       }
 
-      return Response.json({ win, newBalance: user.balance + win });
+      return Response.json({
+        win,
+        newBalance: user.balance + win
+      });
     }
 
     // Roulette quotidienne
@@ -431,7 +527,9 @@ export default {
         "SELECT * FROM users WHERE discord_id = ?"
       ).bind(session).first();
 
-      if (!user) return Response.json({ error: "Utilisateur introuvable" }, { status: 404 });
+      if (!user) {
+        return Response.json({ error: "Utilisateur introuvable" }, { status: 404 });
+      }
 
       const now = Math.floor(Date.now() / 1000);
 
@@ -467,7 +565,10 @@ export default {
         });
       }
 
-      return Response.json({ win, newBalance: user.balance + win });
+      return Response.json({
+        win,
+        newBalance: user.balance + win
+      });
     }
 
     // Administration : ajout de jetons
@@ -479,7 +580,13 @@ export default {
         return new Response("Forbidden", { status: 403 });
       }
 
-      const body = await request.json();
+      let body;
+      try {
+        body = await request.json();
+      } catch {
+        return Response.json({ error: "Requête invalide" }, { status: 400 });
+      }
+
       const amount = Number(body.amount);
 
       if (!body.userId || !Number.isSafeInteger(amount) || amount <= 0) {
@@ -537,6 +644,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2
 <div class="nav" id="nav"></div>
 <div class="container" id="content"></div>
 <div class="footer">by zerr 😸</div>
+
 <script>
 let user = null;
 
@@ -635,11 +743,19 @@ async function buyDiscord(id) {
 
   const data = await res.json();
 
-  if (data.error) return alert(data.error + (data.details ? "\\n" + data.details : ""));
+  if (data.error) {
+    return alert(data.error + (data.details ? "\\n" + data.details : ""));
+  }
 
   user.balance = data.newBalance;
   renderNav();
-  alert("Achat effectué ! Un ticket Discord a été ouvert.");
+
+  if (data.messageSent) {
+    alert("Achat effectué ! Le ticket a été créé avec le détail de ta commande.");
+  } else {
+    alert("Ticket créé, mais le message n'a pas pu être envoyé. Vérifie les permissions du bot.");
+  }
+
   loadDiscordShop();
 }
 
@@ -716,7 +832,10 @@ function initScratch() {
   canvas.addEventListener("mouseup", () => drawing = false);
   canvas.addEventListener("mouseleave", () => drawing = false);
   canvas.addEventListener("mousemove", scratch);
-  canvas.addEventListener("touchstart", e => { drawing = true; scratch(e); });
+  canvas.addEventListener("touchstart", e => {
+    drawing = true;
+    scratch(e);
+  });
   canvas.addEventListener("touchend", () => drawing = false);
   canvas.addEventListener("touchmove", scratch);
 }
@@ -837,7 +956,10 @@ async function setTokens() {
   const res = await fetch("/api/admin/set-tokens", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, amount: parseInt(amount, 10) })
+    body: JSON.stringify({
+      userId,
+      amount: parseInt(amount, 10)
+    })
   });
 
   const data = await res.json();
