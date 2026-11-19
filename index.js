@@ -130,16 +130,22 @@ const HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AKIHARA</title>
 <style>
-body{margin:0;background:#0a0a0a;color:#fff;font-family:system-ui,Arial}
-.header{text-align:center;padding:25px 15px;background:linear-gradient(180deg,#111,#000);border-bottom:2px solid #FFD700}
-.logo{color:#FFD700;font-size:32px;font-weight:bold;letter-spacing:2px;text-shadow:0 0 20px #FFD700}
-.nav{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;padding:20px}
-.nav button{padding:14px 24px;background:#111;color:#FFD700;border:2px solid #FFD700;border-radius:12px;font-weight:bold;font-size:15px;transition:all .2s}
-.nav button:active{transform:scale(0.95);background:#FFD700;color:#000}
-.card{background:linear-gradient(145deg,#1a1a1a,#111);border:1px solid #333;border-radius:18px;padding:25px;margin:15px;box-shadow:0 4px 15px rgba(255,215,0,0.1)}
-.scratch-area{width:300px;height:200px;margin:25px auto;background:#1a1a1a;border-radius:18px;position:relative;overflow:hidden;touch-action:none}
+body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial}
+.header{text-align:center;padding:20px 15px;background:#0f0b1e;border-bottom:1px solid #2a2040}
+.logo{color:#a78bfa;font-size:28px;font-weight:bold;letter-spacing:1px}
+.nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:15px}
+.nav button{padding:12px 22px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:10px;font-weight:600;font-size:14px}
+.nav button:active{background:#2d2250}
+.container{max-width:900px;margin:0 auto;padding:15px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:15px;margin-top:15px}
+.card{background:#16122a;border:1px solid #2a2040;border-radius:16px;padding:20px;text-align:center}
+.card h3{margin:0 0 10px;font-size:18px;color:#e9d5ff}
+.price{font-size:22px;color:#c4b5fd;margin:10px 0;font-weight:bold}
+.btn{padding:12px 24px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer}
+.btn:active{background:#6d28d9}
+.scratch-area{width:280px;height:180px;margin:20px auto;background:#1a1430;border-radius:16px;position:relative;overflow:hidden;touch-action:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}
-.scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:bold;color:#FFD700;text-shadow:0 0 15px #FFD700;z-index:1}
+.scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:bold;color:#c4b5fd;z-index:1}
 </style>
 </head>
 <body>
@@ -148,7 +154,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2
   <div id="userInfo"></div>
 </div>
 <div class="nav" id="nav"></div>
-<div id="content"></div>
+<div class="container" id="content"></div>
 <script>
 let user = null;
 async function init() {
@@ -160,19 +166,20 @@ async function init() {
   else showLogin();
 }
 function showLogin() {
-  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:100px 20px"><h1 style="color:#FFD700;font-size:36px">Bienvenue sur AKIHARA</h1><p style="font-size:18px;color:#aaa">Connectez-vous avec Discord</p><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button style="padding:18px 40px;background:#5865F2;color:white;border:none;border-radius:12px;font-size:18px;font-weight:bold;margin-top:20px">Se connecter avec Discord</button></a></div>';
+  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:80px 20px"><h1 style="color:#a78bfa;font-size:32px">Bienvenue sur AKIHARA</h1><p style="color:#9ca3af">Connectez-vous avec Discord</p><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="margin-top:20px;padding:14px 32px;font-size:16px">Se connecter avec Discord</button></a></div>';
 }
 function renderNav() {
-  document.getElementById("userInfo").innerHTML = '<div style="margin-top:15px;font-size:16px">' + user.username + ' <span style="background:#111;border:2px solid #FFD700;padding:6px 16px;border-radius:25px;margin-left:10px">' + user.balance + ' 🪙</span> <button onclick="logout()" style="margin-left:12px;padding:8px 16px;background:#111;color:#FFD700;border:1px solid #FFD700;border-radius:10px">Déconnexion</button></div>';
+  document.getElementById("userInfo").innerHTML = '<div style="margin-top:12px;font-size:15px">' + user.username + ' <span style="background:#1a1430;border:1px solid #3b2f5e;padding:5px 14px;border-radius:20px;margin-left:8px">' + user.balance + ' 🪙</span> <button onclick="logout()" style="margin-left:10px;padding:6px 12px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:13px">Déconnexion</button></div>';
   document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadAdmin()">Admin</button>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
   const tickets = await res.json();
-  let html = '<h2 style="text-align:center;color:#FFD700;font-size:28px">Boutique de Tickets</h2><div class="card" style="text-align:center"><h3 style="color:#FFD700">Ticket Gratuit (24h)</h3><button onclick="claimFree()" style="padding:14px 30px;background:#FFD700;border:none;border-radius:12px;font-weight:bold;font-size:16px;margin-top:10px">Récupérer</button></div>';
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:24px;margin-bottom:5px">Boutique</h2><div class="grid"><div class="card"><h3>Ticket Gratuit (24h)</h3><button class="btn" onclick="claimFree()">Récupérer</button></div>';
   tickets.filter(t => t.type !== "free").forEach(t => {
-    html += '<div class="card" style="text-align:center"><h3 style="font-size:22px">' + t.name + '</h3><p style="font-size:28px;color:#FFD700;margin:15px 0">' + t.price + ' 🪙</p><button onclick="buyTicket(\\'' + t.type + '\\')" style="padding:14px 30px;background:#FFD700;border:none;border-radius:12px;font-weight:bold;font-size:16px">Acheter</button></div>';
+    html += '<div class="card"><h3>' + t.name + '</h3><div class="price">' + t.price + ' 🪙</div><button class="btn" onclick="buyTicket(\\'' + t.type + '\\')">Acheter</button></div>';
   });
+  html += '</div>';
   document.getElementById("content").innerHTML = html;
 }
 async function claimFree() {
@@ -193,7 +200,7 @@ async function buyTicket(type) {
 }
 function showScratch(win, ticketName) {
   const resultText = win > 0 ? win + " 🪙" : "Perdu";
-  document.getElementById("content").innerHTML = '<div class="card" style="text-align:center"><h2 style="color:#FFD700">' + ticketName + '</h2><div class="scratch-area"><div class="scratch-result" id="result" style="display:flex">' + resultText + '</div><canvas id="scratch"></canvas></div><button onclick="loadBoutique()" style="margin-top:20px;padding:12px 25px;background:#111;color:#FFD700;border:2px solid #FFD700;border-radius:12px;font-weight:bold">Retour boutique</button></div>';
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:340px;margin:20px auto"><h2 style="color:#a78bfa">' + ticketName + '</h2><div class="scratch-area"><div class="scratch-result" id="result" style="display:flex">' + resultText + '</div><canvas id="scratch"></canvas></div><button class="btn" onclick="loadBoutique()" style="margin-top:15px">Retour</button></div>';
   initScratch();
 }
 function initScratch() {
@@ -202,55 +209,5 @@ function initScratch() {
   const rect = canvas.parentElement.getBoundingClientRect();
   canvas.width = rect.width;
   canvas.height = rect.height;
-  ctx.fillStyle = "#FFD700";
+  ctx.fillStyle = "#7c3aed";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.globalCompositeOperation = "destination-out";
-  let drawing = false;
-  function getPos(e) {
-    const r = canvas.getBoundingClientRect();
-    const touch = e.touches ? e.touches[0] : e;
-    return { x: touch.clientX - r.left, y: touch.clientY - r.top };
-  }
-  function scratch(e) {
-    if (!drawing) return;
-    e.preventDefault();
-    const pos = getPos(e);
-    ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 30, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  canvas.addEventListener("mousedown", () => drawing = true);
-  canvas.addEventListener("mouseup", () => drawing = false);
-  canvas.addEventListener("mouseleave", () => drawing = false);
-  canvas.addEventListener("mousemove", scratch);
-  canvas.addEventListener("touchstart", (e) => { drawing = true; scratch(e); });
-  canvas.addEventListener("touchend", () => drawing = false);
-  canvas.addEventListener("touchmove", scratch);
-}
-async function loadLeaderboard() {
-  const res = await fetch("/api/leaderboard");
-  const leaders = await res.json();
-  let html = '<h2 style="text-align:center;color:#FFD700;font-size:28px">Classement</h2>';
-  leaders.forEach((u, i) => {
-    html += '<div class="card">' + (i+1) + '. <strong style="color:#FFD700">' + u.username + '</strong> - ' + u.total_won + ' gagnés</div>';
-  });
-  document.getElementById("content").innerHTML = html;
-}
-function loadAdmin() {
-  if (user.discord_id !== "1473948546674724889") {
-    document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
-    return;
-  }
-  document.getElementById("content").innerHTML = '<div class="card"><h2 style="color:#FFD700">Panneau Admin</h2><p>ID Discord du membre :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:12px;margin:8px 0;background:#111;color:#fff;border:2px solid #FFD700;border-radius:10px;font-size:16px"><p>Montant à ajouter :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:12px;margin:8px 0;background:#111;color:#fff;border:2px solid #FFD700;border-radius:10px;font-size:16px"><br><button onclick="setTokens()" style="padding:14px 30px;background:#FFD700;border:none;border-radius:12px;font-weight:bold;font-size:16px;margin-top:15px">Ajouter</button></div>';
-}
-async function setTokens() {
-  const userId = document.getElementById("targetId").value;
-  const amount = document.getElementById("amount").value;
-  if (!userId || !amount) return alert("Remplis les deux champs");
-  await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount) }) });
-  alert("Jetons ajoutés");
-}
-function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
-init();
-</script>
-</body></html>`;
