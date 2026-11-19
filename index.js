@@ -442,4 +442,110 @@ function makeDeck() {
 function cardVal(c) {
   const r = c.slice(0, -1);
   if (r === "A") return 11;
-  if
+  if (["J","Q","K"].includes(r)) return 10;
+  return parseInt(r, 10);
+}
+function handScore(h) {
+  let s = 0, aces = 0;
+  for (let c of h) { s += cardVal(c); if (c.startsWith("A")) aces++; }
+  while (s > 21 && aces > 0) { s -= 10; aces--; }
+  return s;
+}
+function renderCard(c, hidden) {
+  if (hidden) return '<div class="bj-card hidden">?</div>';
+  const r = c.slice(0, -1);
+  const suit = c.slice(-1);
+  const red = suit === "H" || suit === "D";
+  return '<div class="bj-card' + (red ? ' red' : '') + '">' + r + '</div>';
+}
+function renderBj() {
+  const area = document.getElementById("bjArea");
+  if (!area) return;
+  let html = '<div class="bj-table"><div style="color:#9ca3af;font-size:13px;text-align:center">Dealer</div><div class="bj-hand">' + bjDealer.map((c, i) => renderCard(c, !bjDone && i === 1)).join("") + '</div>';
+  html += '<div class="bj-score">Joueur : ' + handScore(bjPlayer) + '</div><div class="bj-hand">' + bjPlayer.map(c => renderCard(c, false)).join("") + '</div>';
+  if (!bjDone) {
+    html += '<div class="bj-actions"><button class="btn" onclick="bjHit()">Tirer</button><button class="btn" onclick="bjStand()">Rester</button><button class="btn" onclick="bjDouble()">Doubler</button></div>';
+  } else {
+    html += '<div style="text-align:center;margin-top:12px;font-weight:bold;color:#a78bfa;font-size:18px" id="bjResult"></div>';
+  }
+  html += '</div>';
+  area.innerHTML = html;
+}
+async function startBj() {
+  const bet = parseInt(document.getElementById("bjBet").value, 10);
+  if (!bet || bet <= 0 || bet > user.balance) return alert("Mise invalide");
+  bjBet = bet;
+  bjDone = false;
+  bjDeck = makeDeck();
+  bjPlayer = [bjDeck.pop(), bjDeck.pop()];
+  bjDealer = [bjDeck.pop(), bjDeck.pop()];
+  user.balance -= bjBet;
+  renderNav();
+  renderBj();
+  if (handScore(bjPlayer) === 21) endBj();
+}
+function bjHit() {
+  if (bjDone) return;
+  bjPlayer.push(bjDeck.pop());
+  renderBj();
+  if (handScore(bjPlayer) > 21) endBj();
+}
+function bjStand() {
+  if (bjDone) return;
+  endBj();
+}
+function bjDouble() {
+  if (bjDone || user.balance < bjBet) return;
+  user.balance -= bjBet;
+  bjBet *= 2;
+  renderNav();
+  bjHit();
+  if (!bjDone) endBj();
+}
+function endBj() {
+  bjDone = true;
+  while (handScore(bjDealer) < 17) bjDealer.push(bjDeck.pop());
+  renderBj();
+  const ps = handScore(bjPlayer), ds = handScore(bjDealer);
+  let msg = "", gain = 0;
+  if (ps > 21) msg = "Buste ! Perdu";
+  else if (ds > 21 || ps > ds) { msg = "Gagne !"; gain = bjBet * 2; }
+  else if (ps === ds) { msg = "Egalite"; gain = bjBet; }
+  else msg = "Perdu";
+  if (gain > 0) user.balance += gain;
+  renderNav();
+  const el = document.getElementById("bjResult");
+  if (el) el.textContent = msg + (gain ? " +" + gain + " jetons" : "");
+}
+function loadAdmin() {
+  if (user.discord_id !== "1473948546674724889") {
+    document.getElementById("content").innerHTML = '<div class="card">Acces refuse</div>';
+    return;
+  }
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:460px;margin:10px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><br><button class="btn" onclick="setTokens()" style="margin-top:10px">Ajouter</button><hr style="margin:14px 0;border-color:#2a2040"><h3 style="color:#a78bfa">Liste des joueurs</h3><div id="playerList">Chargement...</div></div>';
+  loadPlayerList();
+}
+async function loadPlayerList() {
+  const res = await fetch("/api/admin/players");
+  if (!res.ok) { document.getElementById("playerList").innerHTML = "Impossible de charger les joueurs"; return; }
+  const players = await res.json();
+  let html = "";
+  players.forEach(p => {
+    html += '<div style="background:#1a1430;border:1px solid #2a2040;border-radius:10px;padding:8px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;font-size:14px"><div><strong>' + p.username + '</strong><br><span style="font-size:12px;color:#9ca3af">' + p.discord_id + '</span></div><div style="font-weight:bold">' + p.balance + ' jetons</div></div>';
+  });
+  document.getElementById("playerList").innerHTML = html || "Aucun joueur";
+}
+async function setTokens() {
+  const userId = document.getElementById("targetId").value;
+  const amount = document.getElementById("amount").value;
+  if (!userId || !amount || Number(amount) <= 0) return alert("Remplis les deux champs avec un montant positif");
+  const res = await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount, 10) }) });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || "Erreur");
+  alert("Jetons ajoutes");
+  loadPlayerList();
+}
+function logout() { location.href = "/api/logout"; }
+init();
+</script>
+</body></html>`;
