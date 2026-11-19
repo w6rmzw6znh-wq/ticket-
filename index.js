@@ -1,10 +1,7 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const path = url.pathname;
-
-    if (path.startsWith("/api/")) return handleApi(request, env, path);
-    
+    if (url.pathname.startsWith("/api/")) return handleApi(request, env);
     return new Response(HTML, { headers: { "Content-Type": "text/html" } });
   }
 };
@@ -71,11 +68,12 @@ async function searchUsers() {
   const users = await res.json();
   let html = "";
   users.forEach(u => {
-    html += '<div style="background:#0a0a0a;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333"><strong>' + u.username + '</strong> - ' + u.tokens + ' jetons<br><input type="number" id="amount-' + u.discord_id + '" placeholder="Montant" style="width:100px;padding:6px;margin:5px 0;background:#111;color:#fff;border:1px solid #FFD700;border-radius:6px"><button onclick="setTokens(\\'' + u.discord_id + '\\')" style="padding:6px 12px;background:#FFD700;border:none;border-radius:6px;font-weight:bold">Set</button></div>';
+    html += '<div style="background:#0a0a0a;padding:12px;margin:8px 0;border-radius:10px;border:1px solid #333"><strong>' + u.username + '</strong> - ' + u.tokens + ' jetons<br><input type="number" id="amount-' + u.discord_id + '" placeholder="Montant" style="width:100px;padding:6px;margin:5px 0;background:#111;color:#fff;border:1px solid #FFD700;border-radius:6px"><button data-id="' + u.discord_id + '" onclick="setTokens(this)" style="padding:6px 12px;background:#FFD700;border:none;border-radius:6px;font-weight:bold">Set</button></div>';
   });
   document.getElementById("usersList").innerHTML = html || "<p>Aucun résultat</p>";
 }
-async function setTokens(id) {
+async function setTokens(btn) {
+  const id = btn.getAttribute("data-id");
   const amount = document.getElementById("amount-" + id).value;
   if (!amount) return alert("Entre un montant");
   await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: id, amount: parseInt(amount) }) });
@@ -87,9 +85,10 @@ init();
 </script>
 </body></html>`;
 
-async function handleApi(request, env, path) {
+async function handleApi(request, env) {
   const db = env.DB;
   const url = new URL(request.url);
+  const path = url.pathname;
 
   if (path === "/api/auth/callback") {
     const code = url.searchParams.get("code");
@@ -129,4 +128,13 @@ async function handleApi(request, env, path) {
   }
   if (path === "/api/admin/users" && session === env.ADMIN_DISCORD_ID) {
     const search = url.searchParams.get("search") || "";
-    const users = await db.prepare("SELECT * FROM users WHERE username LIKE ? LIMIT
+    const users = await db.prepare("SELECT * FROM users WHERE username LIKE ? LIMIT 20").bind("%" + search + "%").all();
+    return Response.json(users.results);
+  }
+  if (path === "/api/admin/set-tokens" && request.method === "POST" && session === env.ADMIN_DISCORD_ID) {
+    const body = await request.json();
+    await db.prepare("UPDATE users SET tokens = ? WHERE discord_id = ?").bind(body.amount, body.userId).run();
+    return Response.json({ success: true });
+  }
+  return new Response("Not found", { status: 404 });
+}
