@@ -1,6 +1,9 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/logout") {
+      return new Response(null, { status: 302, headers: { Location: "/", "Set-Cookie": "session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0" } });
+    }
     if (url.pathname === "/api/test-discord") {
       try {
         const res = await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
@@ -342,7 +345,7 @@ async function setTokens() {
   alert("Jetons ajoutés");
   loadPlayerList();
 }
-function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
+function logout() { location.href = "/api/logout"; }
 init();
 </script>
 </body></html>`;
