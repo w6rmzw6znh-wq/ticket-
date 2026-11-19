@@ -72,6 +72,13 @@ export default {
       const leaders = await env.DB.prepare("SELECT username, balance, total_won FROM users ORDER BY total_won DESC LIMIT 10").all();
       return Response.json(leaders.results);
     }
+    if (url.pathname === "/api/admin/players") {
+      const cookie = request.headers.get("Cookie") || "";
+      const session = cookie.match(/session=([^;]+)/)?.[1];
+      if (session !== env.ADMIN_DISCORD_ID) return new Response("Forbidden", { status: 403 });
+      const players = await env.DB.prepare("SELECT discord_id, username, balance FROM users ORDER BY balance DESC").all();
+      return Response.json(players.results);
+    }
     if (url.pathname === "/api/buy" && request.method === "POST") {
       const cookie = request.headers.get("Cookie") || "";
       const session = cookie.match(/session=([^;]+)/)?.[1];
@@ -168,25 +175,28 @@ const HTML = `<!DOCTYPE html>
 <title>AKIHARA</title>
 <style>
 body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial}
-.header{text-align:center;padding:20px 15px;background:#0f0b1e;border-bottom:1px solid #2a2040}
-.logo{color:#a78bfa;font-size:28px;font-weight:bold}
-.nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:15px}
-.nav button{padding:12px 22px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:10px;font-weight:600}
-.container{width:100%;padding:15px;box-sizing:border-box}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-top:15px}
-.card{background:#16122a;border:1px solid #2a2040;border-radius:16px;padding:15px;text-align:center}
-.card img{width:100%;border-radius:12px;margin-bottom:10px}
-.price{font-size:18px;color:#c4b5fd;margin:8px 0;font-weight:bold}
-.btn{padding:10px 20px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:bold;cursor:pointer}
-.scratch-area{width:280px;height:180px;margin:20px auto;background:#1a1430;border-radius:16px;position:relative;overflow:hidden;touch-action:none}
+.header{text-align:center;padding:15px 10px;background:#0f0b1e;border-bottom:1px solid #2a2040}
+.logo{color:#a78bfa;font-size:24px;font-weight:bold}
+.user-bar{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin-top:10px;font-size:14px}
+.balance{background:#1a1430;border:1px solid #3b2f5e;padding:4px 12px;border-radius:16px;white-space:nowrap}
+.balance.discord{border-color:#5865F2}
+.nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:12px}
+.nav button{padding:10px 16px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:10px;font-weight:600;font-size:13px}
+.container{width:100%;padding:12px;box-sizing:border-box}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
+.card{background:#16122a;border:1px solid #2a2040;border-radius:14px;padding:12px;text-align:center}
+.card img{width:100%;border-radius:10px;margin-bottom:8px}
+.price{font-size:16px;color:#c4b5fd;margin:6px 0;font-weight:bold}
+.btn{padding:10px 18px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:bold;cursor:pointer;font-size:14px}
+.scratch-area{width:260px;height:160px;margin:15px auto;background:#1a1430;border-radius:14px;position:relative;overflow:hidden;touch-action:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}
-.scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:bold;color:#c4b5fd;z-index:1}
+.scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#c4b5fd;z-index:1}
 </style>
 </head>
 <body>
 <div class="header">
   <div class="logo">🎟️ AKIHARA</div>
-  <div id="userInfo"></div>
+  <div id="userInfo" class="user-bar"></div>
 </div>
 <div class="nav" id="nav"></div>
 <div class="container" id="content"></div>
@@ -208,10 +218,10 @@ async function init() {
   else showLogin();
 }
 function showLogin() {
-  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:80px 20px"><h1 style="color:#a78bfa;font-size:32px">Bienvenue sur AKIHARA</h1><p style="color:#9ca3af">Connectez-vous avec Discord</p><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="margin-top:20px;padding:14px 32px;font-size:16px">Se connecter avec Discord</button></a></div>';
+  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:60px 15px"><h1 style="color:#a78bfa;font-size:28px">Bienvenue sur AKIHARA</h1><p style="color:#9ca3af">Connectez-vous avec Discord</p><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="margin-top:16px;padding:12px 28px;font-size:15px">Se connecter avec Discord</button></a></div>';
 }
 function renderNav() {
-  document.getElementById("userInfo").innerHTML = '<div style="margin-top:12px">' + user.username + ' <span style="background:#1a1430;border:1px solid #3b2f5e;padding:5px 14px;border-radius:20px;margin-left:8px">' + user.balance + ' 🪙 AKIHARA</span> <span id="hurixBalance" style="background:#1a1430;border:1px solid #5865F2;padding:5px 14px;border-radius:20px;margin-left:8px">... 🪙 Discord</span> <button onclick="logout()" style="margin-left:10px;padding:6px 12px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px">Déconnexion</button></div>';
+  document.getElementById("userInfo").innerHTML = user.username + ' <span class="balance">' + user.balance + ' 🪙 AKIHARA</span> <span class="balance discord" id="hurixBalance">... 🪙 Discord</span> <button onclick="logout()" style="padding:4px 10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:12px">Déconnexion</button>';
   document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
   fetchHurixBalance();
 }
@@ -227,7 +237,7 @@ async function fetchHurixBalance() {
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
   const tickets = await res.json();
-  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:24px">Boutique</h2><div class="grid"><div class="card"><img src="' + images.free + '"><h3>Ticket Gratuit (24h)</h3><button class="btn" onclick="claimFree()">Récupérer</button></div>';
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:22px">Boutique</h2><div class="grid"><div class="card"><img src="' + images.free + '"><h3>Ticket Gratuit (24h)</h3><button class="btn" onclick="claimFree()">Récupérer</button></div>';
   tickets.filter(t => t.type !== "free").forEach(t => {
     html += '<div class="card"><img src="' + (images[t.type] || images.bronze) + '"><h3>' + t.name + '</h3><div class="price">' + t.price + ' 🪙</div><button class="btn" onclick="buyTicket(\\'' + t.type + '\\')">Acheter</button></div>';
   });
@@ -252,7 +262,7 @@ async function buyTicket(type) {
 }
 function showScratch(win, ticketName) {
   const resultText = win > 0 ? win + " 🪙" : "Perdu";
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:340px;margin:20px auto"><h2 style="color:#a78bfa">' + ticketName + '</h2><div class="scratch-area"><div class="scratch-result" id="result" style="display:flex">' + resultText + '</div><canvas id="scratch"></canvas></div><button class="btn" onclick="loadBoutique()" style="margin-top:15px">Retour</button></div>';
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:320px;margin:15px auto"><h2 style="color:#a78bfa">' + ticketName + '</h2><div class="scratch-area"><div class="scratch-result" id="result" style="display:flex">' + resultText + '</div><canvas id="scratch"></canvas></div><button class="btn" onclick="loadBoutique()" style="margin-top:12px">Retour</button></div>';
   initScratch();
 }
 function initScratch() {
@@ -275,7 +285,7 @@ function initScratch() {
     e.preventDefault();
     const pos = getPos(e);
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 28, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 26, 0, Math.PI * 2);
     ctx.fill();
   }
   canvas.addEventListener("mousedown", () => drawing = true);
@@ -289,7 +299,7 @@ function initScratch() {
 async function loadLeaderboard() {
   const res = await fetch("/api/leaderboard");
   const leaders = await res.json();
-  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:24px">Classement</h2><div class="grid">';
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:22px">Classement</h2><div class="grid">';
   leaders.forEach((u, i) => {
     html += '<div class="card">' + (i+1) + '. <strong style="color:#c4b5fd">' + u.username + '</strong><br>' + u.total_won + ' gagnés</div>';
   });
@@ -297,12 +307,12 @@ async function loadLeaderboard() {
   document.getElementById("content").innerHTML = html;
 }
 function loadRoulette() {
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:500px;margin:20px auto;text-align:center"><h2 style="color:#a78bfa;margin-bottom:15px">🎰 Roulette Quotidienne</h2><div id="roulette" style="height:70px;overflow:hidden;background:linear-gradient(90deg,#1a1430,#2d2250,#1a1430);border-radius:12px;margin:15px 0;position:relative;border:2px solid #7c3aed"><div id="roulette-items" style="display:flex;position:absolute;height:100%;transition:none"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:3px;background:#a78bfa;transform:translateX(-50%);box-shadow:0 0 10px #a78bfa"></div></div><button class="btn" onclick="spinRoulette()" style="padding:12px 30px;font-size:16px">Tourner</button></div>';
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:480px;margin:15px auto;text-align:center"><h2 style="color:#a78bfa;margin-bottom:12px">🎰 Roulette Quotidienne</h2><div id="roulette" style="height:64px;overflow:hidden;background:linear-gradient(90deg,#1a1430,#2d2250,#1a1430);border-radius:12px;margin:12px 0;position:relative;border:2px solid #7c3aed"><div id="roulette-items" style="display:flex;position:absolute;height:100%;transition:none"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:3px;background:#a78bfa;transform:translateX(-50%);box-shadow:0 0 8px #a78bfa"></div></div><button class="btn" onclick="spinRoulette()" style="padding:10px 26px;font-size:15px">Tourner</button></div>';
   const items = document.getElementById("roulette-items");
   let html = "";
   for (let i = 0; i < 20; i++) {
     const val = Math.floor(Math.random() * 49500) + 500;
-    html += '<div style="min-width:140px;height:70px;line-height:70px;font-size:18px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
+    html += '<div style="min-width:130px;height:64px;line-height:64px;font-size:16px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
   }
   items.innerHTML = html;
 }
@@ -318,13 +328,13 @@ async function spinRoulette() {
   let html = "";
   for (let i = 0; i < 15; i++) {
     const val = Math.floor(Math.random() * 49500) + 500;
-    html += '<div style="min-width:140px;height:70px;line-height:70px;font-size:18px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
+    html += '<div style="min-width:130px;height:64px;line-height:64px;font-size:16px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
   }
-  html += '<div style="min-width:140px;height:70px;line-height:70px;font-size:20px;font-weight:bold;text-align:center;color:#a78bfa">' + data.win + ' 🪙</div>';
+  html += '<div style="min-width:130px;height:64px;line-height:64px;font-size:18px;font-weight:bold;text-align:center;color:#a78bfa">' + data.win + ' 🪙</div>';
   items.innerHTML = html;
   setTimeout(() => {
     items.style.transition = "transform 4s cubic-bezier(0.15, 0.8, 0.3, 1)";
-    items.style.transform = "translateX(-" + (15 * 140) + "px)";
+    items.style.transform = "translateX(-" + (15 * 130) + "px)";
   }, 50);
   setTimeout(() => {
     alert("Tu as gagné " + data.win + " jetons !");
@@ -335,7 +345,17 @@ function loadAdmin() {
     document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
     return;
   }
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:400px;margin:20px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:12px;margin:8px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:12px;margin:8px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px"><br><button class="btn" onclick="setTokens()" style="margin-top:12px">Ajouter</button></div>';
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:480px;margin:15px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><br><button class="btn" onclick="setTokens()" style="margin-top:10px">Ajouter</button><hr style="margin:16px 0;border-color:#2a2040"><h3 style="color:#a78bfa">Liste des joueurs</h3><div id="playerList">Chargement...</div></div>';
+  loadPlayerList();
+}
+async function loadPlayerList() {
+  const res = await fetch("/api/admin/players");
+  const players = await res.json();
+  let html = "";
+  players.forEach(p => {
+    html += '<div style="background:#1a1430;border:1px solid #2a2040;border-radius:10px;padding:8px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;font-size:14px"><div><strong>' + p.username + '</strong><br><span style="font-size:12px;color:#9ca3af">' + p.discord_id + '</span></div><div style="font-weight:bold">' + p.balance + ' 🪙</div></div>';
+  });
+  document.getElementById("playerList").innerHTML = html || "Aucun joueur";
 }
 async function setTokens() {
   const userId = document.getElementById("targetId").value;
@@ -343,6 +363,7 @@ async function setTokens() {
   if (!userId || !amount) return alert("Remplis les deux champs");
   await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount) }) });
   alert("Jetons ajoutés");
+  loadPlayerList();
 }
 function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
 init();
