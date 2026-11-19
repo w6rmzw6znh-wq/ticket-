@@ -128,9 +128,20 @@ if (!ticketRes.ok) {
 }
 
 const ticket = await ticketRes.json();
-
-          body: JSON.stringify({ content: "🛒 <@" + session + "> a acheté **" + item.name + "** !\nUn ticket a été ouvert pour la livraison." })
-        });
+await fetch(
+  "https://discord.com/api/v10/channels/" + ticket.id + "/messages",
+  {
+    method: "POST",
+    headers: {
+      "Authorization": "Bot " + env.DISCORD_BOT_TOKEN,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      content: "🎫 Ton ticket a bien été créé ! L'équipe staff va te répondre."
+    })
+  }
+);
+          
       }
       return Response.json({ success: true, newBalance: user.balance - item.price });
     }
