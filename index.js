@@ -137,11 +137,13 @@ body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial}
 .nav button{padding:12px 22px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:10px;font-weight:600;font-size:14px}
 .nav button:active{background:#2d2250}
 .container{max-width:900px;margin:0 auto;padding:15px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:15px;margin-top:15px}
-.card{background:#16122a;border:1px solid #2a2040;border-radius:16px;padding:20px;text-align:center}
-.card h3{margin:0 0 10px;font-size:18px;color:#e9d5ff}
-.price{font-size:22px;color:#c4b5fd;margin:10px 0;font-weight:bold}
-.btn{padding:12px 24px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-top:15px}
+@media(max-width:600px){.grid{grid-template-columns:1fr}}
+.card{background:#16122a;border:1px solid #2a2040;border-radius:16px;padding:15px;text-align:center}
+.card img{width:100%;border-radius:12px;margin-bottom:10px}
+.card h3{margin:0 0 8px;font-size:16px;color:#e9d5ff}
+.price{font-size:18px;color:#c4b5fd;margin:8px 0;font-weight:bold}
+.btn{padding:10px 20px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer}
 .btn:active{background:#6d28d9}
 .scratch-area{width:280px;height:180px;margin:20px auto;background:#1a1430;border-radius:16px;position:relative;overflow:hidden;touch-action:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}
@@ -157,6 +159,13 @@ canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2
 <div class="container" id="content"></div>
 <script>
 let user = null;
+const images = {
+  free: "https://placehold.co/400x600/1a1430/a78bfa?text=Ticket+Gratuit",
+  bronze: "https://placehold.co/400x600/1a1430/cd7f32?text=Bronze",
+  silver: "https://placehold.co/400x600/1a1430/c0c0c0?text=Silver",
+  gold: "https://placehold.co/400x600/1a1430/ffd700?text=Gold",
+  diamond: "https://placehold.co/400x600/1a1430/b9f2ff?text=Diamond"
+};
 async function init() {
   try {
     const res = await fetch("/api/me");
@@ -175,9 +184,9 @@ function renderNav() {
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
   const tickets = await res.json();
-  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:24px;margin-bottom:5px">Boutique</h2><div class="grid"><div class="card"><h3>Ticket Gratuit (24h)</h3><button class="btn" onclick="claimFree()">Récupérer</button></div>';
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:24px;margin-bottom:5px">Boutique</h2><div class="grid"><div class="card"><img src="' + images.free + '"><h3>Ticket Gratuit (24h)</h3><button class="btn" onclick="claimFree()">Récupérer</button></div>';
   tickets.filter(t => t.type !== "free").forEach(t => {
-    html += '<div class="card"><h3>' + t.name + '</h3><div class="price">' + t.price + ' 🪙</div><button class="btn" onclick="buyTicket(\\'' + t.type + '\\')">Acheter</button></div>';
+    html += '<div class="card"><img src="' + (images[t.type] || images.bronze) + '"><h3>' + t.name + '</h3><div class="price">' + t.price + ' 🪙</div><button class="btn" onclick="buyTicket(\\'' + t.type + '\\')">Acheter</button></div>';
   });
   html += '</div>';
   document.getElementById("content").innerHTML = html;
@@ -249,16 +258,4 @@ function loadAdmin() {
     document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
     return;
   }
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:400px;margin:20px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:12px;margin:8px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;font-size:15px"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:12px;margin:8px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;font-size:15px"><br><button class="btn" onclick="setTokens()" style="margin-top:12px">Ajouter</button></div>';
-}
-async function setTokens() {
-  const userId = document.getElementById("targetId").value;
-  const amount = document.getElementById("amount").value;
-  if (!userId || !amount) return alert("Remplis les deux champs");
-  await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount) }) });
-  alert("Jetons ajoutés");
-}
-function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
-init();
-</script>
-</body></html>`;
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:400px;margin:20px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID"
