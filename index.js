@@ -1,6 +1,19 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/test-discord") {
+      try {
+        const res = await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
+          method: "POST",
+          headers: { "Authorization": "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
+          body: JSON.stringify({ content: "✅ Test depuis AKIHARA - le bot fonctionne !" })
+        });
+        const data = await res.json();
+        return Response.json({ status: res.status, data });
+      } catch (e) {
+        return Response.json({ error: e.message });
+      }
+    }
     if (url.pathname === "/api/auth/callback") {
       try {
         const code = url.searchParams.get("code");
