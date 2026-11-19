@@ -216,6 +216,21 @@ export default {
       }
       return Response.json({ win, newBalance: user.balance + win });
     }
+    if (url.pathname === "/api/bj-result" && request.method === "POST") {
+      const cookie = request.headers.get("Cookie") || "";
+      const session = cookie.match(/session=([^;]+)/)?.[1];
+      if (!session) return new Response("Unauthorized", { status: 401 });
+      let body;
+      try { body = await request.json(); } catch { return Response.json({ error: "Requête invalide" }, { status: 400 }); }
+      const change = Number(body.change);
+      if (!Number.isSafeInteger(change)) return Response.json({ error: "Montant invalide" }, { status: 400 });
+      const user = await env.DB.prepare("SELECT balance FROM users WHERE discord_id = ?").bind(session).first();
+      if (!user) return Response.json({ error: "Utilisateur introuvable" }, { status: 404 });
+      if (user.balance + change < 0) return Response.json({ error: "Solde insuffisant" }, { status: 400 });
+      await env.DB.prepare("UPDATE users SET balance = balance + ? WHERE discord_id = ?").bind(change, session).run();
+      const updated = await env.DB.prepare("SELECT balance FROM users WHERE discord_id = ?").bind(session).first();
+      return Response.json({ success: true, newBalance: updated.balance });
+    }
     if (url.pathname === "/api/admin/set-tokens" && request.method === "POST") {
       const cookie = request.headers.get("Cookie") || "";
       const session = cookie.match(/session=([^;]+)/)?.[1];
@@ -481,7 +496,10 @@ async function startBj() {
   bjDeck = makeDeck();
   bjPlayer = [bjDeck.pop(), bjDeck.pop()];
   bjDealer = [bjDeck.pop(), bjDeck.pop()];
-  user.balance -= bjBet;
+  const res = await fetch("/api/bj-result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ change: -bjBet }) });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || "Erreur");
+  user.balance = data.newBalance;
   renderNav();
   renderBj();
   if (handScore(bjPlayer) === 21) endBj();
@@ -496,15 +514,18 @@ function bjStand() {
   if (bjDone) return;
   endBj();
 }
-function bjDouble() {
+async function bjDouble() {
   if (bjDone || user.balance < bjBet) return;
-  user.balance -= bjBet;
+  const res = await fetch("/api/bj-result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ change: -bjBet }) });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || "Erreur");
+  user.balance = data.newBalance;
   bjBet *= 2;
   renderNav();
   bjHit();
   if (!bjDone) endBj();
 }
-function endBj() {
+async function endBj() {
   bjDone = true;
   while (handScore(bjDealer) < 17) bjDealer.push(bjDeck.pop());
   renderBj();
@@ -514,7 +535,11 @@ function endBj() {
   else if (ds > 21 || ps > ds) { msg = "Gagne !"; gain = bjBet * 2; }
   else if (ps === ds) { msg = "Egalite"; gain = bjBet; }
   else msg = "Perdu";
-  if (gain > 0) user.balance += gain;
+  if (gain > 0) {
+    const res = await fetch("/api/bj-result", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ change: gain }) });
+    const data = await res.json();
+    if (res.ok) user.balance = data.newBalance;
+  }
   renderNav();
   const el = document.getElementById("bjResult");
   if (el) el.textContent = msg + (gain ? " +" + gain + " jetons" : "");
