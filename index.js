@@ -1,16 +1,17 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/test-discord") {
+    if (url.pathname === "/api/hurix-balance") {
+      const cookie = request.headers.get("Cookie") || "";
+      const session = cookie.match(/session=([^;]+)/)?.[1];
+      if (!session || !env.HURIX_API_KEY) return Response.json({ error: "No session or key" });
       try {
-        const res = await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
-          method: "POST",
-          headers: { "Authorization": "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
-          body: JSON.stringify({ content: "✅ Test depuis AKIHARA" })
+        const res = await fetch("https://hurix.xyz/api/v1/guild/members/" + session, {
+          headers: { Authorization: "Bearer " + env.HURIX_API_KEY }
         });
         const data = await res.json();
-        return Response.json({ status: res.status, data });
-      } catch (e) {
+        return Response.json({ raw: data });
+      } catch(e) {
         return Response.json({ error: e.message });
       }
     }
@@ -49,20 +50,6 @@ export default {
       if (!session) return new Response("Unauthorized", { status: 401 });
       const user = await env.DB.prepare("SELECT * FROM users WHERE discord_id = ?").bind(session).first();
       return Response.json(user || {});
-    }
-    if (url.pathname === "/api/hurix-balance") {
-      const cookie = request.headers.get("Cookie") || "";
-      const session = cookie.match(/session=([^;]+)/)?.[1];
-      if (!session || !env.HURIX_API_KEY) return Response.json({ error: "No session or key", balance: 0 });
-      try {
-        const res = await fetch("https://hurix.xyz/api/v1/guild/members/" + session, {
-          headers: { Authorization: "Bearer " + env.HURIX_API_KEY }
-        });
-        const data = await res.json();
-        return Response.json({ raw: data, balance: data.economy?.balance || data.balance || 0 });
-      } catch(e) {
-        return Response.json({ error: e.message, balance: 0 });
-      }
     }
     if (url.pathname === "/api/tickets") {
       const tickets = await env.DB.prepare("SELECT * FROM ticket_configs WHERE enabled = 1").all();
@@ -329,3 +316,43 @@ async function spinRoulette() {
   for (let i = 0; i < 15; i++) {
     const val = Math.floor(Math.random() * 49500) + 500;
     html += '<div style="min-width:130px;height:64px;line-height:64px;font-size:16px;font-weight:bold;text-align:center">' + val + ' 🪙</div>';
+  }
+  html += '<div style="min-width:130px;height:64px;line-height:64px;font-size:18px;font-weight:bold;text-align:center;color:#a78bfa">' + data.win + ' 🪙</div>';
+  items.innerHTML = html;
+  setTimeout(() => {
+    items.style.transition = "transform 4s cubic-bezier(0.15, 0.8, 0.3, 1)";
+    items.style.transform = "translateX(-" + (15 * 130) + "px)";
+  }, 50);
+  setTimeout(() => {
+    alert("Tu as gagné " + data.win + " jetons !");
+  }, 4200);
+}
+function loadAdmin() {
+  if (user.discord_id !== "1473948546674724889") {
+    document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
+    return;
+  }
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:480px;margin:15px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><br><button class="btn" onclick="setTokens()" style="margin-top:10px">Ajouter</button><hr style="margin:16px 0;border-color:#2a2040"><h3 style="color:#a78bfa">Liste des joueurs</h3><div id="playerList">Chargement...</div></div>';
+  loadPlayerList();
+}
+async function loadPlayerList() {
+  const res = await fetch("/api/admin/players");
+  const players = await res.json();
+  let html = "";
+  players.forEach(p => {
+    html += '<div style="background:#1a1430;border:1px solid #2a2040;border-radius:10px;padding:8px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;font-size:14px"><div><strong>' + p.username + '</strong><br><span style="font-size:12px;color:#9ca3af">' + p.discord_id + '</span></div><div style="font-weight:bold">' + p.balance + ' 🪙</div></div>';
+  });
+  document.getElementById("playerList").innerHTML = html || "Aucun joueur";
+}
+async function setTokens() {
+  const userId = document.getElementById("targetId").value;
+  const amount = document.getElementById("amount").value;
+  if (!userId || !amount) return alert("Remplis les deux champs");
+  await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount) }) });
+  alert("Jetons ajoutés");
+  loadPlayerList();
+}
+function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
+init();
+</script>
+</body></html>`;
