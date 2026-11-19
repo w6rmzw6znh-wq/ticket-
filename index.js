@@ -211,3 +211,54 @@ function initScratch() {
   canvas.height = rect.height;
   ctx.fillStyle = "#7c3aed";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.globalCompositeOperation = "destination-out";
+  let drawing = false;
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: touch.clientX - r.left, y: touch.clientY - r.top };
+  }
+  function scratch(e) {
+    if (!drawing) return;
+    e.preventDefault();
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, 28, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  canvas.addEventListener("mousedown", () => drawing = true);
+  canvas.addEventListener("mouseup", () => drawing = false);
+  canvas.addEventListener("mouseleave", () => drawing = false);
+  canvas.addEventListener("mousemove", scratch);
+  canvas.addEventListener("touchstart", (e) => { drawing = true; scratch(e); });
+  canvas.addEventListener("touchend", () => drawing = false);
+  canvas.addEventListener("touchmove", scratch);
+}
+async function loadLeaderboard() {
+  const res = await fetch("/api/leaderboard");
+  const leaders = await res.json();
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:24px">Classement</h2><div class="grid">';
+  leaders.forEach((u, i) => {
+    html += '<div class="card">' + (i+1) + '. <strong style="color:#c4b5fd">' + u.username + '</strong><br>' + u.total_won + ' gagnés</div>';
+  });
+  html += '</div>';
+  document.getElementById("content").innerHTML = html;
+}
+function loadAdmin() {
+  if (user.discord_id !== "1473948546674724889") {
+    document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
+    return;
+  }
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:400px;margin:20px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:12px;margin:8px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;font-size:15px"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:12px;margin:8px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;font-size:15px"><br><button class="btn" onclick="setTokens()" style="margin-top:12px">Ajouter</button></div>';
+}
+async function setTokens() {
+  const userId = document.getElementById("targetId").value;
+  const amount = document.getElementById("amount").value;
+  if (!userId || !amount) return alert("Remplis les deux champs");
+  await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount) }) });
+  alert("Jetons ajoutés");
+}
+function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
+init();
+</script>
+</body></html>`;
