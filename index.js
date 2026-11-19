@@ -255,10 +255,15 @@ body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial;min-heig
 .scratch-area{width:260px;height:150px;margin:12px auto;background:#1a1430;border-radius:14px;position:relative;overflow:hidden;touch-action:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}
 .scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:bold;color:#c4b5fd;z-index:1}
-.bj-card{display:inline-flex;align-items:center;justify-content:center;width:52px;height:72px;background:#fff;color:#1a1430;border-radius:8px;font-weight:bold;font-size:18px;margin:4px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.bj-table{background:#1a1430;border:2px solid #7c3aed;border-radius:16px;padding:16px;margin-top:12px}
+.bj-hand{min-height:90px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.bj-card{width:58px;height:80px;background:linear-gradient(145deg,#fff,#f0f0f0);color:#1a1430;border-radius:8px;font-weight:bold;font-size:20px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 10px rgba(0,0,0,.5);position:relative}
 .bj-card.red{color:#e11d48}
-.bj-hidden{background:#7c3aed;color:#7c3aed}
-.bj-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:12px 0}
+.bj-card.hidden{background:linear-gradient(145deg,#7c3aed,#5b21b6);color:#7c3aed}
+.bj-score{text-align:center;font-size:13px;color:#c4b5fd;margin-top:4px}
+.bj-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.game-card{background:#16122a;border:1px solid #2a2040;border-radius:14px;padding:16px;text-align:center;cursor:pointer}
+.game-card:hover{border-color:#7c3aed}
 .footer{text-align:center;padding:8px;font-size:12px;color:#6b7280;border-top:1px solid #1a1430;flex-shrink:0}
 </style>
 </head>
@@ -288,11 +293,14 @@ async function init() {
   else showLogin();
 }
 function showLogin() {
-  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:30px 15px;max-width:420px;margin:0 auto"><h1 style="color:#a78bfa;font-size:28px;margin:0 0 6px;font-weight:700">AKIHARA</h1><p style="color:#9ca3af;font-size:14px;margin:0 0 24px">Tickets a gratter • Roulette • Classement</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px"><div class="card">Tickets</div><div class="card">Roulette</div><div class="card">Classement</div><div class="card">Gratuit</div></div><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="width:100%;padding:14px;font-size:15px;border-radius:12px">Se connecter avec Discord</button></a><p style="margin-top:16px;font-size:12px;color:#6b7280">by zerr</p></div>';
+  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:30px 15px;max-width:420px;margin:0 auto"><h1 style="color:#a78bfa;font-size:28px;margin:0 0 6px;font-weight:700">AKIHARA</h1><p style="color:#9ca3af;font-size:14px;margin:0 0 24px">Tickets a gratter • Jeux • Classement</p><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px"><div class="card">Tickets</div><div class="card">Jeux</div><div class="card">Classement</div><div class="card">Gratuit</div></div><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="width:100%;padding:14px;font-size:15px;border-radius:12px">Se connecter avec Discord</button></a><p style="margin-top:16px;font-size:12px;color:#6b7280">by zerr</p></div>';
 }
 function renderNav() {
   document.getElementById("userInfo").innerHTML = user.username + ' <span class="balance">' + user.balance + ' jetons</span> <button onclick="logout()" style="padding:4px 10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:12px">Deconnexion</button>';
-  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadDiscordShop()">Boutique Discord</button><button onclick="loadBlackjack()">Blackjack</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
+  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadDiscordShop()">Boutique Discord</button><button onclick="loadJeux()">Jeux</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
+}
+function loadJeux() {
+  document.getElementById("content").innerHTML = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Jeux</h2><div class="grid"><div class="game-card" onclick="loadBlackjack()"><h3 style="color:#c4b5fd">Blackjack</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Joue contre le dealer</p><button class="btn">Jouer</button></div></div>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
@@ -421,7 +429,7 @@ async function spinRoulette() {
 }
 let bjDeck = [], bjPlayer = [], bjDealer = [], bjBet = 0, bjDone = false;
 function loadBlackjack() {
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:460px;margin:10px auto"><h2 style="color:#a78bfa;text-align:center">Blackjack</h2><p>Mise :</p><input id="bjBet" type="number" value="100" min="1" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><button class="btn" onclick="startBj()" style="width:100%">Nouvelle main</button><div id="bjArea"></div></div>';
+  document.getElementById("content").innerHTML = '<div style="max-width:480px;margin:10px auto"><button class="btn" onclick="loadJeux()" style="margin-bottom:10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e">Retour</button><div class="card"><h2 style="color:#a78bfa;text-align:center">Blackjack</h2><p>Mise :</p><input id="bjBet" type="number" value="100" min="1" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><button class="btn" onclick="startBj()" style="width:100%">Nouvelle main</button><div id="bjArea"></div></div></div>';
 }
 function makeDeck() {
   const suits = ["S","H","D","C"];
@@ -434,109 +442,4 @@ function makeDeck() {
 function cardVal(c) {
   const r = c.slice(0, -1);
   if (r === "A") return 11;
-  if (["J","Q","K"].includes(r)) return 10;
-  return parseInt(r, 10);
-}
-function handScore(h) {
-  let s = 0, aces = 0;
-  for (let c of h) { s += cardVal(c); if (c.startsWith("A")) aces++; }
-  while (s > 21 && aces > 0) { s -= 10; aces--; }
-  return s;
-}
-function renderCard(c, hidden) {
-  if (hidden) return '<div class="bj-card bj-hidden">?</div>';
-  const r = c.slice(0, -1);
-  const suit = c.slice(-1);
-  const red = suit === "H" || suit === "D";
-  return '<div class="bj-card' + (red ? ' red' : '') + '">' + r + '</div>';
-}
-function renderBj() {
-  const area = document.getElementById("bjArea");
-  if (!area) return;
-  let html = '<div style="margin-top:16px"><div style="color:#9ca3af;font-size:13px">Dealer</div><div>' + bjDealer.map((c, i) => renderCard(c, !bjDone && i === 1)).join("") + '</div>';
-  html += '<div style="margin-top:12px;color:#9ca3af;font-size:13px">Joueur (' + handScore(bjPlayer) + ')</div><div>' + bjPlayer.map(c => renderCard(c, false)).join("") + '</div>';
-  if (!bjDone) {
-    html += '<div class="bj-actions"><button class="btn" onclick="bjHit()">Tirer</button><button class="btn" onclick="bjStand()">Rester</button><button class="btn" onclick="bjDouble()">Doubler</button></div>';
-  } else {
-    html += '<div style="text-align:center;margin-top:12px;font-weight:bold;color:#a78bfa" id="bjResult"></div>';
-  }
-  area.innerHTML = html;
-}
-async function startBj() {
-  const bet = parseInt(document.getElementById("bjBet").value, 10);
-  if (!bet || bet <= 0 || bet > user.balance) return alert("Mise invalide");
-  bjBet = bet;
-  bjDone = false;
-  bjDeck = makeDeck();
-  bjPlayer = [bjDeck.pop(), bjDeck.pop()];
-  bjDealer = [bjDeck.pop(), bjDeck.pop()];
-  user.balance -= bjBet;
-  renderNav();
-  renderBj();
-  if (handScore(bjPlayer) === 21) endBj();
-}
-function bjHit() {
-  if (bjDone) return;
-  bjPlayer.push(bjDeck.pop());
-  renderBj();
-  if (handScore(bjPlayer) > 21) endBj();
-}
-function bjStand() {
-  if (bjDone) return;
-  endBj();
-}
-function bjDouble() {
-  if (bjDone || user.balance < bjBet) return;
-  user.balance -= bjBet;
-  bjBet *= 2;
-  renderNav();
-  bjHit();
-  if (!bjDone) endBj();
-}
-function endBj() {
-  bjDone = true;
-  while (handScore(bjDealer) < 17) bjDealer.push(bjDeck.pop());
-  renderBj();
-  const ps = handScore(bjPlayer), ds = handScore(bjDealer);
-  let msg = "", gain = 0;
-  if (ps > 21) msg = "Buste ! Perdu";
-  else if (ds > 21 || ps > ds) { msg = "Gagne !"; gain = bjBet * 2; }
-  else if (ps === ds) { msg = "Egalite"; gain = bjBet; }
-  else msg = "Perdu";
-  if (gain > 0) user.balance += gain;
-  renderNav();
-  const el = document.getElementById("bjResult");
-  if (el) el.textContent = msg + (gain ? " +" + gain + " jetons" : "");
-}
-function loadAdmin() {
-  if (user.discord_id !== "1473948546674724889") {
-    document.getElementById("content").innerHTML = '<div class="card">Acces refuse</div>';
-    return;
-  }
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:460px;margin:10px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:10px;margin:6px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px;box-sizing:border-box"><br><button class="btn" onclick="setTokens()" style="margin-top:10px">Ajouter</button><hr style="margin:14px 0;border-color:#2a2040"><h3 style="color:#a78bfa">Liste des joueurs</h3><div id="playerList">Chargement...</div></div>';
-  loadPlayerList();
-}
-async function loadPlayerList() {
-  const res = await fetch("/api/admin/players");
-  if (!res.ok) { document.getElementById("playerList").innerHTML = "Impossible de charger les joueurs"; return; }
-  const players = await res.json();
-  let html = "";
-  players.forEach(p => {
-    html += '<div style="background:#1a1430;border:1px solid #2a2040;border-radius:10px;padding:8px;margin:6px 0;display:flex;justify-content:space-between;align-items:center;font-size:14px"><div><strong>' + p.username + '</strong><br><span style="font-size:12px;color:#9ca3af">' + p.discord_id + '</span></div><div style="font-weight:bold">' + p.balance + ' jetons</div></div>';
-  });
-  document.getElementById("playerList").innerHTML = html || "Aucun joueur";
-}
-async function setTokens() {
-  const userId = document.getElementById("targetId").value;
-  const amount = document.getElementById("amount").value;
-  if (!userId || !amount || Number(amount) <= 0) return alert("Remplis les deux champs avec un montant positif");
-  const res = await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount, 10) }) });
-  const data = await res.json();
-  if (!res.ok) return alert(data.error || "Erreur");
-  alert("Jetons ajoutes");
-  loadPlayerList();
-}
-function logout() { location.href = "/api/logout"; }
-init();
-</script>
-</body></html>`;
+  if
