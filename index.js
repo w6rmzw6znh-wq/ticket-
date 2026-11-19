@@ -271,7 +271,14 @@ async function loadLeaderboard() {
   document.getElementById("content").innerHTML = html;
 }
 function loadRoulette() {
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:400px;margin:20px auto;text-align:center"><h2 style="color:#a78bfa">🎰 Roulette Quotidienne</h2><p>Gagne entre 500 et 50 000 jetons !</p><button class="btn" onclick="spinRoulette()">Tourner</button></div>';
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:400px;margin:20px auto;text-align:center"><h2 style="color:#a78bfa">🎰 Roulette Quotidienne</h2><div id="roulette" style="height:60px;overflow:hidden;background:#1a1430;border-radius:10px;margin:15px 0;position:relative"><div id="roulette-items" style="position:absolute;width:100%;transition:none"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:#a78bfa;transform:translateX(-50%)"></div></div><button class="btn" onclick="spinRoulette()">Tourner</button></div>';
+  const items = document.getElementById("roulette-items");
+  let html = "";
+  for (let i = 0; i < 30; i++) {
+    const val = Math.floor(Math.random() * 49500) + 500;
+    html += '<div style="height:60px;line-height:60px;font-size:20px;font-weight:bold">' + val + ' 🪙</div>';
+  }
+  items.innerHTML = html;
 }
 async function spinRoulette() {
   const res = await fetch("/api/roulette", { method: "POST" });
@@ -279,7 +286,23 @@ async function spinRoulette() {
   if (data.error) return alert(data.error);
   user.balance = data.newBalance;
   renderNav();
-  alert("Tu as gagné " + data.win + " jetons !");
+  const items = document.getElementById("roulette-items");
+  items.style.transition = "none";
+  items.style.transform = "translateY(0)";
+  let html = "";
+  for (let i = 0; i < 25; i++) {
+    const val = Math.floor(Math.random() * 49500) + 500;
+    html += '<div style="height:60px;line-height:60px;font-size:20px;font-weight:bold">' + val + ' 🪙</div>';
+  }
+  html += '<div style="height:60px;line-height:60px;font-size:20px;font-weight:bold;color:#a78bfa">' + data.win + ' 🪙</div>';
+  items.innerHTML = html;
+  setTimeout(() => {
+    items.style.transition = "transform 3s cubic-bezier(0.15, 0.8, 0.3, 1)";
+    items.style.transform = "translateY(-" + (25 * 60) + "px)";
+  }, 50);
+  setTimeout(() => {
+    alert("Tu as gagné " + data.win + " jetons !");
+  }, 3200);
 }
 function loadAdmin() {
   if (user.discord_id !== "1473948546674724889") {
