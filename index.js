@@ -70,10 +70,65 @@ export default {
       if (user.balance < item.price) return Response.json({ error: "Pas assez de jetons" }, { status: 400 });
       await env.DB.prepare("UPDATE users SET balance = balance - ? WHERE discord_id = ?").bind(item.price, session).run();
       await env.DB.prepare("UPDATE discord_shop SET stock = stock - 1 WHERE id = ?").bind(item.id).run();
-      if (env.DISCORD_BOT_TOKEN) {
-        await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
-          method: "POST",
-          headers: { "Authorization": "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
+      
+if (!env.DISCORD_BOT_TOKEN) {
+  await env.DB.prepare("UPDATE users SET balance = balance + ? WHERE discord_id = ?").bind(item.price, session).run();
+  await env.DB.prepare("UPDATE discord_shop SET stock = stock + 1 WHERE id = ?").bind(item.id).run();
+  return Response.json({ error: "Bot Discord non configuré" }, { status: 500 });
+}
+
+const overwrites = [
+  {
+    id: env.GUILD_ID,
+    type: 0,
+    deny: "1024",
+    allow: "0"
+  },
+  {
+    id: session,
+    type: 1,
+    allow: "67584",
+    deny: "0"
+  }
+];
+
+if (env.STAFF_ROLE_ID) {
+  overwrites.push({
+    id: env.STAFF_ROLE_ID,
+    type: 0,
+    allow: "67584",
+    deny: "0"
+  });
+}
+
+const ticketRes = await fetch(
+  "https://discord.com/api/v10/guilds/" + env.GUILD_ID + "/channels",
+  {
+    method: "POST",
+    headers: {
+      "Authorization": "Bot " + env.DISCORD_BOT_TOKEN,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      name: "ticket-" + user.username.toLowerCase().replace(/[^a-z0-9-]/g, "-").slice(0, 70),
+      type: 0,
+      parent_id: "1571511806340497598",
+      permission_overwrites: overwrites
+    })
+  }
+);
+
+if (!ticketRes.ok) {
+  const error = await ticketRes.text();
+
+  await env.DB.prepare("UPDATE users SET balance = balance + ? WHERE discord_id = ?").bind(item.price, session).run();
+  await env.DB.prepare("UPDATE discord_shop SET stock = stock + 1 WHERE id = ?").bind(item.id).run();
+
+  return Response.json({ error: "Impossible de créer le ticket : " + error }, { status: 500 });
+}
+
+const ticket = await ticketRes.json();
+
           body: JSON.stringify({ content: "🛒 <@" + session + "> a acheté **" + item.name + "** !\nUn ticket a été ouvert pour la livraison." })
         });
       }
