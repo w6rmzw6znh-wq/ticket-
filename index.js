@@ -6,7 +6,7 @@ export default {
         const res = await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
           method: "POST",
           headers: { "Authorization": "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
-          body: JSON.stringify({ content: "✅ Test depuis AKIHARA - le bot fonctionne !" })
+          body: JSON.stringify({ content: "✅ Test depuis AKIHARA" })
         });
         const data = await res.json();
         return Response.json({ status: res.status, data });
@@ -132,19 +132,16 @@ const HTML = `<!DOCTYPE html>
 <style>
 body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial}
 .header{text-align:center;padding:20px 15px;background:#0f0b1e;border-bottom:1px solid #2a2040}
-.logo{color:#a78bfa;font-size:28px;font-weight:bold;letter-spacing:1px}
+.logo{color:#a78bfa;font-size:28px;font-weight:bold}
 .nav{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:15px}
-.nav button{padding:12px 22px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:10px;font-weight:600;font-size:14px}
-.nav button:active{background:#2d2250}
+.nav button{padding:12px 22px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:10px;font-weight:600}
 .container{max-width:900px;margin:0 auto;padding:15px}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:15px;margin-top:15px}
 @media(max-width:600px){.grid{grid-template-columns:1fr}}
 .card{background:#16122a;border:1px solid #2a2040;border-radius:16px;padding:15px;text-align:center}
 .card img{width:100%;border-radius:12px;margin-bottom:10px}
-.card h3{margin:0 0 8px;font-size:16px;color:#e9d5ff}
 .price{font-size:18px;color:#c4b5fd;margin:8px 0;font-weight:bold}
-.btn{padding:10px 20px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:bold;font-size:14px;cursor:pointer}
-.btn:active{background:#6d28d9}
+.btn{padding:10px 20px;background:#7c3aed;color:#fff;border:none;border-radius:10px;font-weight:bold;cursor:pointer}
 .scratch-area{width:280px;height:180px;margin:20px auto;background:#1a1430;border-radius:16px;position:relative;overflow:hidden;touch-action:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}
 .scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:bold;color:#c4b5fd;z-index:1}
@@ -178,13 +175,13 @@ function showLogin() {
   document.getElementById("content").innerHTML = '<div style="text-align:center;padding:80px 20px"><h1 style="color:#a78bfa;font-size:32px">Bienvenue sur AKIHARA</h1><p style="color:#9ca3af">Connectez-vous avec Discord</p><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="margin-top:20px;padding:14px 32px;font-size:16px">Se connecter avec Discord</button></a></div>';
 }
 function renderNav() {
-  document.getElementById("userInfo").innerHTML = '<div style="margin-top:12px;font-size:15px">' + user.username + ' <span style="background:#1a1430;border:1px solid #3b2f5e;padding:5px 14px;border-radius:20px;margin-left:8px">' + user.balance + ' 🪙</span> <button onclick="logout()" style="margin-left:10px;padding:6px 12px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:13px">Déconnexion</button></div>';
+  document.getElementById("userInfo").innerHTML = '<div style="margin-top:12px">' + user.username + ' <span style="background:#1a1430;border:1px solid #3b2f5e;padding:5px 14px;border-radius:20px;margin-left:8px">' + user.balance + ' 🪙</span> <button onclick="logout()" style="margin-left:10px;padding:6px 12px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px">Déconnexion</button></div>';
   document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadAdmin()">Admin</button>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
   const tickets = await res.json();
-  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:24px;margin-bottom:5px">Boutique</h2><div class="grid"><div class="card"><img src="' + images.free + '"><h3>Ticket Gratuit (24h)</h3><button class="btn" onclick="claimFree()">Récupérer</button></div>';
+  let html = '<h2 style="text-align:center;color:#a78bfa;font-size:24px">Boutique</h2><div class="grid"><div class="card"><img src="' + images.free + '"><h3>Ticket Gratuit (24h)</h3><button class="btn" onclick="claimFree()">Récupérer</button></div>';
   tickets.filter(t => t.type !== "free").forEach(t => {
     html += '<div class="card"><img src="' + (images[t.type] || images.bronze) + '"><h3>' + t.name + '</h3><div class="price">' + t.price + ' 🪙</div><button class="btn" onclick="buyTicket(\\'' + t.type + '\\')">Acheter</button></div>';
   });
@@ -258,4 +255,16 @@ function loadAdmin() {
     document.getElementById("content").innerHTML = '<div class="card">Accès refusé</div>';
     return;
   }
-  document.getElementById("content").innerHTML = '<div class="card" style="max-width:400px;margin:20px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID"
+  document.getElementById("content").innerHTML = '<div class="card" style="max-width:400px;margin:20px auto"><h2 style="color:#a78bfa">Admin</h2><p>ID Discord :</p><input id="targetId" placeholder="Discord ID" style="width:100%;padding:12px;margin:8px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px"><p>Montant :</p><input id="amount" type="number" placeholder="Montant" style="width:100%;padding:12px;margin:8px 0;background:#1a1430;color:#fff;border:1px solid #3b2f5e;border-radius:10px"><br><button class="btn" onclick="setTokens()" style="margin-top:12px">Ajouter</button></div>';
+}
+async function setTokens() {
+  const userId = document.getElementById("targetId").value;
+  const amount = document.getElementById("amount").value;
+  if (!userId || !amount) return alert("Remplis les deux champs");
+  await fetch("/api/admin/set-tokens", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, amount: parseInt(amount) }) });
+  alert("Jetons ajoutés");
+}
+function logout() { document.cookie = "session=;Path=/;Max-Age=0"; location.reload(); }
+init();
+</script>
+</body></html>`;
