@@ -1,17 +1,16 @@
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/api/hurix-balance") {
-      const cookie = request.headers.get("Cookie") || "";
-      const session = cookie.match(/session=([^;]+)/)?.[1];
-      if (!session || !env.HURIX_API_KEY) return Response.json({ error: "No session or key" });
+    if (url.pathname === "/api/test-discord") {
       try {
-        const res = await fetch("https://hurix.xyz/api/v1/guild/members/" + session, {
-          headers: { Authorization: "Bearer " + env.HURIX_API_KEY }
+        const res = await fetch("https://discord.com/api/v10/channels/1572952017846927452/messages", {
+          method: "POST",
+          headers: { "Authorization": "Bot " + env.DISCORD_BOT_TOKEN, "Content-Type": "application/json" },
+          body: JSON.stringify({ content: "✅ Test depuis AKIHARA" })
         });
         const data = await res.json();
-        return Response.json({ raw: data });
-      } catch(e) {
+        return Response.json({ status: res.status, data });
+      } catch (e) {
         return Response.json({ error: e.message });
       }
     }
@@ -161,15 +160,14 @@ const HTML = `<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AKIHARA</title>
 <style>
-body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial}
+body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial;min-height:100vh;display:flex;flex-direction:column}
 .header{text-align:center;padding:15px 10px;background:#0f0b1e;border-bottom:1px solid #2a2040}
 .logo{color:#a78bfa;font-size:24px;font-weight:bold}
 .user-bar{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;margin-top:10px;font-size:14px}
 .balance{background:#1a1430;border:1px solid #3b2f5e;padding:4px 12px;border-radius:16px;white-space:nowrap}
-.balance.discord{border-color:#5865F2}
 .nav{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:12px}
 .nav button{padding:10px 16px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:10px;font-weight:600;font-size:13px}
-.container{width:100%;padding:12px;box-sizing:border-box}
+.container{width:100%;padding:12px;box-sizing:border-box;flex:1}
 .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:12px}
 .card{background:#16122a;border:1px solid #2a2040;border-radius:14px;padding:12px;text-align:center}
 .card img{width:100%;border-radius:10px;margin-bottom:8px}
@@ -178,6 +176,7 @@ body{margin:0;background:#0f0b1e;color:#fff;font-family:system-ui,Arial}
 .scratch-area{width:260px;height:160px;margin:15px auto;background:#1a1430;border-radius:14px;position:relative;overflow:hidden;touch-action:none}
 canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2}
 .scratch-result{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;color:#c4b5fd;z-index:1}
+.footer{text-align:center;padding:12px;font-size:12px;color:#6b7280;border-top:1px solid #1a1430}
 </style>
 </head>
 <body>
@@ -187,6 +186,7 @@ canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2
 </div>
 <div class="nav" id="nav"></div>
 <div class="container" id="content"></div>
+<div class="footer">by zerr ✌️</div>
 <script>
 let user = null;
 const images = {
@@ -205,21 +205,11 @@ async function init() {
   else showLogin();
 }
 function showLogin() {
-  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:60px 15px"><h1 style="color:#a78bfa;font-size:28px">Bienvenue sur AKIHARA</h1><p style="color:#9ca3af">Connectez-vous avec Discord</p><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="margin-top:16px;padding:12px 28px;font-size:15px">Se connecter avec Discord</button></a></div>';
+  document.getElementById("content").innerHTML = '<div style="text-align:center;padding:40px 15px"><h1 style="color:#a78bfa;font-size:32px;margin-bottom:8px">Bienvenue sur AKIHARA</h1><p style="color:#9ca3af;font-size:16px;margin-bottom:24px">Tickets à gratter • Roulette • Classement</p><div style="max-width:400px;margin:0 auto 30px;text-align:left;color:#c4b5fd;font-size:14px"><p>• Gratte des tickets premium</p><p>• Gagne des jetons</p><p>• Tourne la roulette quotidienne</p><p>• Grimpe dans le classement</p></div><a href="https://discord.com/oauth2/authorize?client_id=1572922433822924830&redirect_uri=https%3A%2F%2Fticket-akihara.nhdmpnf4jr.workers.dev%2Fapi%2Fauth%2Fcallback&response_type=code&scope=identify%20guilds"><button class="btn" style="padding:14px 32px;font-size:16px">Se connecter avec Discord</button></a></div>';
 }
 function renderNav() {
-  document.getElementById("userInfo").innerHTML = user.username + ' <span class="balance">' + user.balance + ' 🪙 AKIHARA</span> <span class="balance discord" id="hurixBalance">... 🪙 Discord</span> <button onclick="logout()" style="padding:4px 10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:12px">Déconnexion</button>';
+  document.getElementById("userInfo").innerHTML = user.username + ' <span class="balance">' + user.balance + ' 🪙</span> <button onclick="logout()" style="padding:4px 10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:12px">Déconnexion</button>';
   document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
-  fetchHurixBalance();
-}
-async function fetchHurixBalance() {
-  try {
-    const res = await fetch("/api/hurix-balance");
-    const data = await res.json();
-    document.getElementById("hurixBalance").textContent = JSON.stringify(data);
-  } catch(e) {
-    document.getElementById("hurixBalance").textContent = "Erreur: " + e.message;
-  }
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
