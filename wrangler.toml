@@ -1,0 +1,17 @@
+name = "scratch-club"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "scratch-club-db"
+database_id = "YOUR_D1_DATABASE_ID_HERE"
+
+[vars]
+DISCORD_CLIENT_ID = "YOUR_DISCORD_CLIENT_ID"
+GUILD_ID = "YOUR_GUILD_ID"
+ADMIN_DISCORD_ID = "YOUR_ADMIN_DISCORD_ID"
+# Secrets (set via dashboard or wrangler secret put):
+# DISCORD_CLIENT_SECRET
+# DISCORD_BOT_TOKEN
+# SESSION_SECRET
