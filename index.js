@@ -348,7 +348,8 @@ const images = {
   silver: "https://cdn.discordapp.com/attachments/1571623648303783942/1572966456185061518/IMG_2820.png?ex=6b004aab&is=6afef92b&hm=f70b7d4c70d0628834d0903df906261f7782ba85d5459b1d17a3c064bf050087&",
   gold: "https://cdn.discordapp.com/attachments/1571623648303783942/1572966585101058178/IMG_2821.png?ex=6b004aca&is=6afef94a&hm=061d249def798ff2b0e2d4792ec2c9e50c5af8fb60565a18ae2b8db8023cac50&",
   diamond: "https://cdn.discordapp.com/attachments/1571623648303783942/1572966713069412513/IMG_2822.png?ex=6b004ae8&is=6afef968&hm=ebf7dd60b3ec05e63204dd3204ee2ac7184e9f137917a0fb79eb167d83437289&",
-  blackjack: "https://cdn.discordapp.com/attachments/1571623648303783942/1573114784465817741/IMG_2876.png?ex=6b00d4cf&is=6aff834f&hm=c7012eb926d0ff1fb2751337d9f4e1a52c9e6ab531c1d82ac5385594eee1e566&"
+  blackjack: "https://cdn.discordapp.com/attachments/1571623648303783942/1573114784465817741/IMG_2876.png?ex=6b00d4cf&is=6aff834f&hm=c7012eb926d0ff1fb2751337d9f4e1a52c9e6ab531c1d82ac5385594eee1e566&",
+  roulette: "https://cdn.discordapp.com/attachments/1571623648303783942/1573269410393751623/IMG_2880.png?ex=6b0164d1&is=6b001351&hm=7660cbe0d2604852e5f870bc69eed1aa733fe186ecf991811351caff90718644&"
 };
 async function init() {
   try {
@@ -366,7 +367,7 @@ function renderNav() {
   document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadDiscordShop()">Boutique Discord</button><button onclick="loadJeux()">Jeux</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRouletteDaily()">Roulette Quotidienne</button><button onclick="loadAdmin()">Admin</button>';
 }
 function loadJeux() {
-  document.getElementById("content").innerHTML = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Jeux</h2><div class="grid"><div class="game-card" onclick="loadBlackjack()"><img src="' + images.blackjack + '"><h3 style="color:#c4b5fd">Blackjack</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Joue contre le dealer</p><button class="btn">Jouer</button></div><div class="game-card" onclick="loadRouletteGame()"><h3 style="color:#c4b5fd">Roulette</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Roue européenne</p><button class="btn">Jouer</button></div></div>';
+  document.getElementById("content").innerHTML = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Jeux</h2><div class="grid"><div class="game-card" onclick="loadBlackjack()"><img src="' + images.blackjack + '"><h3 style="color:#c4b5fd">Blackjack</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Joue contre le dealer</p><button class="btn">Jouer</button></div><div class="game-card" onclick="loadRouletteGame()"><img src="' + images.roulette + '"><h3 style="color:#c4b5fd">Roulette</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Roue européenne</p><button class="btn">Jouer</button></div></div>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
