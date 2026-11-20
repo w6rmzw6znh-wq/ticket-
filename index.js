@@ -315,18 +315,19 @@ canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2
 .game-card{background:#16122a;border:1px solid #2a2040;border-radius:14px;padding:12px;text-align:center;cursor:pointer}
 .game-card:hover{border-color:#7c3aed}
 .game-card img{width:100%;border-radius:10px;margin-bottom:8px}
-.wheel-wrap{position:relative;width:240px;height:240px;margin:10px auto}
-.wheel{width:100%;height:100%;border-radius:50%;border:10px solid #7c3aed;position:relative;background:#111;transition:transform 4.5s cubic-bezier(0.15,0.8,0.3,1);overflow:hidden}
-.wheel-num{position:absolute;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;border-radius:50%;transform-origin:center}
-.ball{position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:8px;left:50%;transform:translateX(-50%);box-shadow:0 0 8px #fff;z-index:5}
+.wheel-wrap{position:relative;width:260px;height:260px;margin:16px auto}
+.wheel{width:100%;height:100%;border-radius:50%;border:12px solid #2a2040;position:relative;background:#0a0a0a;transition:transform 5s cubic-bezier(0.15,0.8,0.3,1);box-shadow:0 0 20px rgba(124,58,237,.4)}
+.wheel-inner{position:absolute;inset:18%;border-radius:50%;background:#0f0b1e;border:4px solid #1a1430}
+.wheel-num{position:absolute;font-size:11px;font-weight:bold;color:#fff;transform-origin:center;width:24px;text-align:center}
+.ball{position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:10px;left:50%;transform:translateX(-50%);box-shadow:0 0 10px #fff;z-index:10}
 .bet-table{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:10px 0;font-size:12px}
-.bet-cell{padding:10px 4px;background:#1a1430;border:1px solid #3b2f5e;border-radius:6px;text-align:center;cursor:pointer;position:relative;min-height:36px}
+.bet-cell{padding:10px 4px;background:#1a1430;border:1px solid #3b2f5e;border-radius:6px;text-align:center;cursor:pointer;position:relative;min-height:38px}
 .bet-cell.red{background:#7f1d1d}
 .bet-cell.black{background:#1a1a1a}
 .bet-cell.green{background:#14532d}
-.chip-on{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#f59e0b;color:#1a1430;border-radius:50%;width:22px;height:22px;font-size:10px;font-weight:bold;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.chip-on{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#f59e0b;color:#1a1430;border-radius:50%;width:24px;height:24px;font-size:10px;font-weight:bold;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.5);z-index:2}
 .chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0}
-.chip{padding:8px 12px;background:#7c3aed;border-radius:20px;cursor:pointer;font-weight:bold;font-size:13px}
+.chip{padding:8px 14px;background:#7c3aed;border-radius:20px;cursor:pointer;font-weight:bold;font-size:13px}
 .chip.selected{background:#a78bfa;color:#1a1430}
 .footer{text-align:center;padding:8px;font-size:12px;color:#6b7280;border-top:1px solid #1a1430;flex-shrink:0}
 </style>
@@ -599,29 +600,28 @@ function loadRouletteGame() {
   let numbers = "";
   for (let i = 1; i <= 36; i++) {
     const red = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i);
-    numbers += '<div class="bet-cell ' + (red ? "red" : "black") + '" data-type="number" data-value="' + i + '" onclick="addBet(this,\\'number\\',' + i + ')">' + i + '</div>';
+    numbers += '<div class="bet-cell ' + (red ? "red" : "black") + '" onclick="addBet(this,\\'number\\',' + i + ')">' + i + '</div>';
   }
-  document.getElementById("content").innerHTML = '<div style="max-width:480px;margin:10px auto"><button class="btn" onclick="loadJeux()" style="margin-bottom:10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e">Retour</button><div class="card"><h2 style="color:#a78bfa;text-align:center">Roulette</h2><div class="wheel-wrap"><div class="wheel" id="wheel"></div><div class="ball"></div></div><div id="rouletteResult" style="text-align:center;font-size:18px;font-weight:bold;color:#a78bfa;min-height:28px"></div><div class="chips"><span class="chip" onclick="setChip(10,this)">10</span><span class="chip" onclick="setChip(50,this)">50</span><span class="chip" onclick="setChip(100,this)">100</span><span class="chip" onclick="setChip(500,this)">500</span></div><div class="bet-table"><div class="bet-cell green" data-type="number" data-value="0" onclick="addBet(this,\\'number\\',0)">0</div>' + numbers + '</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:6px 0"><div class="bet-cell" data-type="dozen1" onclick="addBet(this,\\'dozen1\\')">1-12</div><div class="bet-cell" data-type="dozen2" onclick="addBet(this,\\'dozen2\\')">13-24</div><div class="bet-cell" data-type="dozen3" onclick="addBet(this,\\'dozen3\\')">25-36</div><div class="bet-cell" data-type="low" onclick="addBet(this,\\'low\\')">1-18</div><div class="bet-cell" data-type="even" onclick="addBet(this,\\'even\\')">Pair</div><div class="bet-cell" data-type="red" onclick="addBet(this,\\'red\\')">Rouge</div><div class="bet-cell" data-type="black" onclick="addBet(this,\\'black\\')">Noir</div><div class="bet-cell" data-type="odd" onclick="addBet(this,\\'odd\\')">Impair</div><div class="bet-cell" data-type="high" onclick="addBet(this,\\'high\\')">19-36</div></div><div id="currentBets" style="font-size:12px;color:#9ca3af;margin:8px 0">Aucune mise</div><button class="btn" onclick="spinRouletteGame()" style="width:100%">Lancer</button></div></div>';
+  document.getElementById("content").innerHTML = '<div style="max-width:500px;margin:10px auto"><button class="btn" onclick="loadJeux()" style="margin-bottom:10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e">Retour</button><div class="card"><h2 style="color:#a78bfa;text-align:center;margin-bottom:4px">ROULETTE EUROPEENNE</h2><div class="wheel-wrap"><div class="wheel" id="wheel"><div class="wheel-inner"></div></div><div class="ball"></div></div><div id="rouletteResult" style="text-align:center;font-size:18px;font-weight:bold;color:#a78bfa;min-height:28px"></div><div class="chips"><span class="chip" onclick="setChip(10,this)">10</span><span class="chip" onclick="setChip(50,this)">50</span><span class="chip" onclick="setChip(100,this)">100</span><span class="chip" onclick="setChip(500,this)">500</span></div><div class="bet-table"><div class="bet-cell green" onclick="addBet(this,\\'number\\',0)">0</div>' + numbers + '</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:6px 0"><div class="bet-cell" onclick="addBet(this,\\'dozen1\\')">1-12</div><div class="bet-cell" onclick="addBet(this,\\'dozen2\\')">13-24</div><div class="bet-cell" onclick="addBet(this,\\'dozen3\\')">25-36</div><div class="bet-cell" onclick="addBet(this,\\'low\\')">1-18</div><div class="bet-cell" onclick="addBet(this,\\'even\\')">Pair</div><div class="bet-cell" onclick="addBet(this,\\'red\\')">Rouge</div><div class="bet-cell" onclick="addBet(this,\\'black\\')">Noir</div><div class="bet-cell" onclick="addBet(this,\\'odd\\')">Impair</div><div class="bet-cell" onclick="addBet(this,\\'high\\')">19-36</div></div><div id="currentBets" style="font-size:12px;color:#9ca3af;margin:8px 0">Aucune mise</div><button class="btn" onclick="spinRouletteGame()" style="width:100%">Lancer</button></div></div>';
   buildWheel();
   setChip(10, document.querySelector(".chip"));
 }
 function buildWheel() {
   const wheel = document.getElementById("wheel");
   if (!wheel) return;
-  wheel.innerHTML = "";
   const red = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
   wheelNumbers.forEach((n, i) => {
     const el = document.createElement("div");
     el.className = "wheel-num";
     el.textContent = n;
-    const angle = (i / 37) * 360;
-    const rad = (angle - 90) * Math.PI / 180;
-    const x = 50 + 38 * Math.cos(rad);
-    const y = 50 + 38 * Math.sin(rad);
+    const angle = (i / 37) * 360 - 90;
+    const rad = angle * Math.PI / 180;
+    const x = 50 + 42 * Math.cos(rad);
+    const y = 50 + 42 * Math.sin(rad);
     el.style.left = x + "%";
     el.style.top = y + "%";
-    el.style.transform = "translate(-50%,-50%) rotate(" + angle + "deg)";
-    el.style.background = n === 0 ? "#14532d" : (red.includes(n) ? "#7f1d1d" : "#1a1a1a");
+    el.style.transform = "translate(-50%,-50%) rotate(" + (angle + 90) + "deg)";
+    el.style.color = n === 0 ? "#4ade80" : (red.includes(n) ? "#f87171" : "#fff");
     wheel.appendChild(el);
   });
 }
@@ -656,14 +656,14 @@ async function spinRouletteGame() {
   renderNav();
   const wheel = document.getElementById("wheel");
   const idx = wheelNumbers.indexOf(data.result);
-  const deg = 360 * 6 + (360 / 37) * (37 - idx);
+  const deg = 360 * 7 + (360 / 37) * (37 - idx);
   wheel.style.transform = "rotate(" + deg + "deg)";
   setTimeout(() => {
     document.getElementById("rouletteResult").textContent = "Resultat : " + data.result + (data.winAmount > 0 ? " | Gain : " + data.winAmount : " | Perdu");
     rouletteBets = [];
     document.querySelectorAll(".chip-on").forEach(c => c.remove());
     updateBetsDisplay();
-  }, 4500);
+  }, 5000);
 }
 function loadAdmin() {
   if (user.discord_id !== "1473948546674724889") {
