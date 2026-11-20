@@ -231,6 +231,41 @@ export default {
       const updated = await env.DB.prepare("SELECT balance FROM users WHERE discord_id = ?").bind(session).first();
       return Response.json({ success: true, newBalance: updated.balance });
     }
+    if (url.pathname === "/api/roulette-spin" && request.method === "POST") {
+      const cookie = request.headers.get("Cookie") || "";
+      const session = cookie.match(/session=([^;]+)/)?.[1];
+      if (!session) return new Response("Unauthorized", { status: 401 });
+      let body;
+      try { body = await request.json(); } catch { return Response.json({ error: "Requête invalide" }, { status: 400 }); }
+      const bets = body.bets || [];
+      const totalBet = bets.reduce((s, b) => s + (b.amount || 0), 0);
+      if (totalBet <= 0) return Response.json({ error: "Aucune mise" }, { status: 400 });
+      const user = await env.DB.prepare("SELECT balance FROM users WHERE discord_id = ?").bind(session).first();
+      if (!user || user.balance < totalBet) return Response.json({ error: "Solde insuffisant" }, { status: 400 });
+      await env.DB.prepare("UPDATE users SET balance = balance - ? WHERE discord_id = ?").bind(totalBet, session).run();
+      const result = Math.floor(Math.random() * 37);
+      let winAmount = 0;
+      const red = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+      for (const b of bets) {
+        let mult = 0;
+        if (b.type === "number" && b.value === result) mult = 36;
+        else if (b.type === "red" && red.includes(result)) mult = 2;
+        else if (b.type === "black" && result !== 0 && !red.includes(result)) mult = 2;
+        else if (b.type === "even" && result !== 0 && result % 2 === 0) mult = 2;
+        else if (b.type === "odd" && result % 2 === 1) mult = 2;
+        else if (b.type === "low" && result >= 1 && result <= 18) mult = 2;
+        else if (b.type === "high" && result >= 19 && result <= 36) mult = 2;
+        else if (b.type === "dozen1" && result >= 1 && result <= 12) mult = 3;
+        else if (b.type === "dozen2" && result >= 13 && result <= 24) mult = 3;
+        else if (b.type === "dozen3" && result >= 25 && result <= 36) mult = 3;
+        if (mult > 0) winAmount += b.amount * mult;
+      }
+      if (winAmount > 0) {
+        await env.DB.prepare("UPDATE users SET balance = balance + ?, total_won = total_won + ? WHERE discord_id = ?").bind(winAmount, winAmount, session).run();
+      }
+      const updated = await env.DB.prepare("SELECT balance FROM users WHERE discord_id = ?").bind(session).first();
+      return Response.json({ result, winAmount, newBalance: updated.balance });
+    }
     if (url.pathname === "/api/admin/set-tokens" && request.method === "POST") {
       const cookie = request.headers.get("Cookie") || "";
       const session = cookie.match(/session=([^;]+)/)?.[1];
@@ -280,6 +315,17 @@ canvas{position:absolute;inset:0;width:100%;height:100%;cursor:pointer;z-index:2
 .game-card{background:#16122a;border:1px solid #2a2040;border-radius:14px;padding:12px;text-align:center;cursor:pointer}
 .game-card:hover{border-color:#7c3aed}
 .game-card img{width:100%;border-radius:10px;margin-bottom:8px}
+.wheel-wrap{position:relative;width:220px;height:220px;margin:10px auto}
+.wheel{width:100%;height:100%;border-radius:50%;border:8px solid #7c3aed;background:conic-gradient(#0a0a0a 0deg 9.73deg,#e11d48 9.73deg 19.46deg,#0a0a0a 19.46deg 29.19deg,#e11d48 29.19deg 38.92deg,#0a0a0a 38.92deg 48.65deg,#e11d48 48.65deg 58.38deg,#0a0a0a 58.38deg 68.11deg,#e11d48 68.11deg 77.84deg,#0a0a0a 77.84deg 87.57deg,#e11d48 87.57deg 97.3deg,#0a0a0a 97.3deg 107.03deg,#e11d48 107.03deg 116.76deg,#0a0a0a 116.76deg 126.49deg,#e11d48 126.49deg 136.22deg,#0a0a0a 136.22deg 145.95deg,#e11d48 145.95deg 155.68deg,#0a0a0a 155.68deg 165.41deg,#e11d48 165.41deg 175.14deg,#0a0a0a 175.14deg 184.86deg,#e11d48 184.86deg 194.59deg,#0a0a0a 194.59deg 204.32deg,#e11d48 204.32deg 214.05deg,#0a0a0a 214.05deg 223.78deg,#e11d48 223.78deg 233.51deg,#0a0a0a 233.51deg 243.24deg,#e11d48 243.24deg 252.97deg,#0a0a0a 252.97deg 262.7deg,#e11d48 262.7deg 272.43deg,#0a0a0a 272.43deg 282.16deg,#e11d48 282.16deg 291.89deg,#0a0a0a 291.89deg 301.62deg,#e11d48 301.62deg 311.35deg,#0a0a0a 311.35deg 321.08deg,#e11d48 321.08deg 330.81deg,#0a0a0a 330.81deg 340.54deg,#e11d48 340.54deg 350.27deg,#0a0a0a 350.27deg 360deg);transition:transform 4s cubic-bezier(0.15,0.8,0.3,1)}
+.ball{position:absolute;width:12px;height:12px;background:#fff;border-radius:50%;top:6px;left:50%;transform:translateX(-50%);box-shadow:0 0 6px #fff}
+.bet-table{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:10px 0;font-size:12px}
+.bet-cell{padding:8px 4px;background:#1a1430;border:1px solid #3b2f5e;border-radius:6px;text-align:center;cursor:pointer}
+.bet-cell.red{background:#7f1d1d}
+.bet-cell.black{background:#1a1a1a}
+.bet-cell.green{background:#14532d}
+.chips{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:8px 0}
+.chip{padding:8px 12px;background:#7c3aed;border-radius:20px;cursor:pointer;font-weight:bold;font-size:13px}
+.chip.selected{background:#a78bfa;color:#1a1430}
 .footer{text-align:center;padding:8px;font-size:12px;color:#6b7280;border-top:1px solid #1a1430;flex-shrink:0}
 </style>
 </head>
@@ -314,10 +360,10 @@ function showLogin() {
 }
 function renderNav() {
   document.getElementById("userInfo").innerHTML = user.username + ' <span class="balance">' + user.balance + ' jetons</span> <button onclick="logout()" style="padding:4px 10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e;border-radius:8px;font-size:12px">Deconnexion</button>';
-  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadDiscordShop()">Boutique Discord</button><button onclick="loadJeux()">Jeux</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRoulette()">Roulette</button><button onclick="loadAdmin()">Admin</button>';
+  document.getElementById("nav").innerHTML = '<button onclick="loadBoutique()">Boutique</button><button onclick="loadDiscordShop()">Boutique Discord</button><button onclick="loadJeux()">Jeux</button><button onclick="loadLeaderboard()">Classement</button><button onclick="loadRouletteDaily()">Roulette Quotidienne</button><button onclick="loadAdmin()">Admin</button>';
 }
 function loadJeux() {
-  document.getElementById("content").innerHTML = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Jeux</h2><div class="grid"><div class="game-card" onclick="loadBlackjack()"><img src="' + images.blackjack + '"><h3 style="color:#c4b5fd">Blackjack</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Joue contre le dealer</p><button class="btn">Jouer</button></div></div>';
+  document.getElementById("content").innerHTML = '<h2 style="text-align:center;color:#a78bfa;font-size:20px;margin:8px 0">Jeux</h2><div class="grid"><div class="game-card" onclick="loadBlackjack()"><img src="' + images.blackjack + '"><h3 style="color:#c4b5fd">Blackjack</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Joue contre le dealer</p><button class="btn">Jouer</button></div><div class="game-card" onclick="loadRouletteGame()"><h3 style="color:#c4b5fd">Roulette</h3><p style="font-size:13px;color:#9ca3af;margin:6px 0">Roue européenne</p><button class="btn">Jouer</button></div></div>';
 }
 async function loadBoutique() {
   const res = await fetch("/api/tickets");
@@ -410,7 +456,7 @@ async function loadLeaderboard() {
   html += '</div>';
   document.getElementById("content").innerHTML = html;
 }
-function loadRoulette() {
+function loadRouletteDaily() {
   document.getElementById("content").innerHTML = '<div class="card" style="max-width:460px;margin:10px auto;text-align:center"><h2 style="color:#a78bfa;margin-bottom:10px">Roulette Quotidienne</h2><div id="roulette" style="height:60px;overflow:hidden;background:linear-gradient(90deg,#1a1430,#2d2250,#1a1430);border-radius:12px;margin:10px 0;position:relative;border:2px solid #7c3aed"><div id="roulette-items" style="display:flex;position:absolute;height:100%;transition:none"></div><div style="position:absolute;left:50%;top:0;bottom:0;width:3px;background:#a78bfa;transform:translateX(-50%);box-shadow:0 0 8px #a78bfa"></div></div><button class="btn" onclick="spinRoulette()" style="padding:10px 24px;font-size:15px">Tourner</button></div>';
   const items = document.getElementById("roulette-items");
   let html = "";
@@ -543,6 +589,46 @@ async function endBj() {
   renderNav();
   const el = document.getElementById("bjResult");
   if (el) el.textContent = msg + (gain ? " +" + gain + " jetons" : "");
+}
+let rouletteBets = [];
+let currentChip = 10;
+function loadRouletteGame() {
+  let numbers = "";
+  for (let i = 1; i <= 36; i++) {
+    const red = [1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36].includes(i);
+    numbers += '<div class="bet-cell ' + (red ? "red" : "black") + '" onclick="addBet(\\'number\\',' + i + ')">' + i + '</div>';
+  }
+  document.getElementById("content").innerHTML = '<div style="max-width:480px;margin:10px auto"><button class="btn" onclick="loadJeux()" style="margin-bottom:10px;background:#1a1430;color:#c4b5fd;border:1px solid #3b2f5e">Retour</button><div class="card"><h2 style="color:#a78bfa;text-align:center">Roulette</h2><div class="wheel-wrap"><div class="wheel" id="wheel"></div><div class="ball"></div></div><div id="rouletteResult" style="text-align:center;font-size:18px;font-weight:bold;color:#a78bfa;min-height:28px"></div><div class="chips"><span class="chip" onclick="setChip(10)">10</span><span class="chip" onclick="setChip(50)">50</span><span class="chip" onclick="setChip(100)">100</span><span class="chip" onclick="setChip(500)">500</span></div><div class="bet-table"><div class="bet-cell green" onclick="addBet(\\'number\\',0)">0</div>' + numbers + '</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin:6px 0"><div class="bet-cell" onclick="addBet(\\'dozen1\\')">1-12</div><div class="bet-cell" onclick="addBet(\\'dozen2\\')">13-24</div><div class="bet-cell" onclick="addBet(\\'dozen3\\')">25-36</div><div class="bet-cell" onclick="addBet(\\'low\\')">1-18</div><div class="bet-cell" onclick="addBet(\\'even\\')">Pair</div><div class="bet-cell" onclick="addBet(\\'red\\')">Rouge</div><div class="bet-cell" onclick="addBet(\\'black\\')">Noir</div><div class="bet-cell" onclick="addBet(\\'odd\\')">Impair</div><div class="bet-cell" onclick="addBet(\\'high\\')">19-36</div></div><div id="currentBets" style="font-size:12px;color:#9ca3af;margin:8px 0">Aucune mise</div><button class="btn" onclick="spinRouletteGame()" style="width:100%">Lancer</button></div></div>';
+  setChip(10);
+}
+function setChip(v) {
+  currentChip = v;
+  document.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+  event.target.classList.add("selected");
+}
+function addBet(type, value) {
+  rouletteBets.push({ type, value, amount: currentChip });
+  updateBetsDisplay();
+}
+function updateBetsDisplay() {
+  const total = rouletteBets.reduce((s, b) => s + b.amount, 0);
+  document.getElementById("currentBets").textContent = rouletteBets.length ? "Mises : " + rouletteBets.length + " (" + total + " jetons)" : "Aucune mise";
+}
+async function spinRouletteGame() {
+  if (!rouletteBets.length) return alert("Place au moins une mise");
+  const res = await fetch("/api/roulette-spin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bets: rouletteBets }) });
+  const data = await res.json();
+  if (!res.ok) return alert(data.error || "Erreur");
+  user.balance = data.newBalance;
+  renderNav();
+  const wheel = document.getElementById("wheel");
+  const deg = 360 * 5 + (360 / 37) * (37 - data.result);
+  wheel.style.transform = "rotate(" + deg + "deg)";
+  setTimeout(() => {
+    document.getElementById("rouletteResult").textContent = "Resultat : " + data.result + (data.winAmount > 0 ? " | Gain : " + data.winAmount : " | Perdu");
+    rouletteBets = [];
+    updateBetsDisplay();
+  }, 4000);
 }
 function loadAdmin() {
   if (user.discord_id !== "1473948546674724889") {
